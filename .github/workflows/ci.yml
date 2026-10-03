@@ -192,6 +192,31 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
+  playwright:
+    # FB-00 §4 acceptance criteria 6 (Playwright smoke part) and 7 (axe-core on `/`).
+    name: Playwright smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: flowboard-web/playwright-report/
+          retention-days: 7
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest
