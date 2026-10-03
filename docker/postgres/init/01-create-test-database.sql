@@ -1,3 +1,3 @@
--- CL-E21: a second database on the same instance so integration tests never
--- truncate development data. Runs once, on first initialisation of the volume.
-CREATE DATABASE flowboard_test OWNER flowboard;
+-- SCRATCH COMMIT — DO NOT MERGE. TAS-26 negative control: flowboard_test is
+-- deliberately not created so the compose-smoke assertion must fail red.
+SELECT 1;
