@@ -88,7 +88,7 @@ All timestamps are UTC ISO 8601 strings in JSON; column names are `snake_case`, 
 
 ### 7. Data changes
 
-Migration `0001_init` (one migration for the whole model, with `0001_init.down.sql`):
+Migration `0000_init` (one migration for the whole model, with `0000_init.down.sql`; numbered from `0000` because `drizzle-kit` requires contiguous zero-based tags, see CL-E22; the approved text read `0001_init`):
 
 | Table | Columns (type, constraints) | Notes |
 |---|---|---|
