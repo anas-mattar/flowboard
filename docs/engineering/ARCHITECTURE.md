@@ -85,10 +85,11 @@ The FS §5 model is implemented as written, with the additions below. The author
 
 | Table | Notes beyond FS §5 | Trace |
 |---|---|---|
-| `user` | `email` unique (case-insensitive), `password_hash`, `initials`, `avatar_color`. | FS §5; CL-E5 |
+| `user` | `email` unique (case-insensitive), `password_hash`, `initials`, `avatar_color`, `theme`. | FS §5; CL-E5, CL-E13 |
 | `workspace` | `plan` and limit columns stored but not enforced. | FS §5; CL-D5 |
 | `workspace_member` | `(workspace_id, user_id, role)`. Many-to-many from day one. | CL-D7 |
-| `board` | `archived_at` replaces the boolean `archived`. `starred` is per user, so it lives on `board_member` or a `board_star` row rather than on `board` (B-04 is a personal preference). | B-04, B-06; CL-A2 |
+| `board` | `archived_at` replaces the boolean `archived`. `starred` is per user, so it lives in `board_star` rather than on `board` (B-04 is a personal preference). | B-04, B-06; CL-A2 |
+| `board_star` | `(board_id, user_id)` join table; one row per starred board per user. | B-04; CL-E14 |
 | `board_member` | `(board_id, user_id, role)` with role in {board admin, member, observer}. | FS §6 |
 | `label` | `board_id` mandatory; six defaults seeded on board creation. | CL-D3 |
 | `list` | `position` sparse float, `wip_limit` nullable, `archived_at`. | FS §5.1; L-04; CL-D4 |
@@ -97,11 +98,15 @@ The FS §5 model is implemented as written, with the additions below. The author
 | `checklist_item` | `position` sparse float. | C-09 |
 | `comment` | Immutable in v1.0 (no edit story exists). | C-10 |
 | `activity_event` | Insert-only. `type` constrained to the FS §5.2 enum from `flowboard-shared`. `payload` is JSONB validated by the per-type schema. | FS §5.2; STANDARDS §1.3 |
-| `invitation` | `board_id`, `email`, `token`, `role`, `expires_at`, `accepted_at`. Link-based in MVP. | B-05; CL-D6 |
-| `session` | Cookie-backed web sessions. | CL-E5 |
-| `funnel_event` | `workspace_id`, `user_id`, `type`, `created_at`. Own database first. | BM §9, §13.3; CL-A5 |
+| `invitation` | `board_id`, `email`, `token_hash`, `role`, `expires_at`, `accepted_at`. Link-based in MVP; only the token hash is stored. | B-05; CL-D6 |
+| `session` | Backs both httpOnly cookie sessions and bearer tokens; only `token_hash` is stored. | CL-E5, CL-E9 |
+| `funnel_event` | `workspace_id`, `user_id`, `type`, `payload`, `created_at`. Own database first. Insert-only. | BM §9, §13.3; CL-A5 |
 
-Conventions that apply to every table: UUID v7 primary keys, `created_at`, `updated_at`; soft delete only through `archived_at`; all timestamps UTC.
+Conventions that apply to every table: UUID v7 primary keys, `created_at` and `updated_at`; soft delete only through `archived_at`; all timestamps UTC. Three deliberate exceptions:
+
+- The five join tables (`workspace_member`, `board_member`, `board_star`, `card_label`, `card_member`) use a composite primary key instead of a surrogate `id`.
+- The append-only event tables `activity_event` and `funnel_event` have no `updated_at`, because they are never edited (CL-E19).
+- `board_star`, `card_label` and `card_member` carry `created_at` only: a row's existence is its whole state, so there is nothing to update.
 
 ### 3.1 Ordering with sparse floats (FS §5.1)
 
