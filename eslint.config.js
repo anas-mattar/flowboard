@@ -45,5 +45,25 @@ export default tseslint.config(
     files: ['*.js', '*.config.js', '*.config.ts', '**/*.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  {
+    // Repository tooling is plain CommonJS run directly by Node; no tsconfig covers it.
+    files: ['tools/**/*.cjs'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
   prettierConfig,
 );

@@ -78,6 +78,13 @@ Citations use **FS §n** for `docs/product/FUNCTIONAL_SPEC.md`, **BM §n** for `
 - Anas gives human acceptance and merge approval before any merge into `main`. Agents open pull requests and attach evidence; they do not merge.
 - Production deployment is authorised separately from merge approval.
 
+### 1.11 Pushing and opening pull requests from an agent run
+
+- Agents push and open pull requests through `tools/paperclip-git.cjs`, which obtains the run's managed GitHub credentials from the Paperclip broker and starts the real `git.exe`. Paperclip's own managed launcher does not start on Windows (Paperclip issue TAS-35), so plain `git push` prompts for credentials and fails.
+- Push: `node tools/paperclip-git.cjs push -u origin <branch>`. Open a pull request: `node tools/paperclip-git.cjs pr create --title "<title>" --body-file <file> --head <branch>` (base defaults to `main`). Write the description to a file first so quoting is not an issue.
+- Local commits, worktrees and reads do not need the wrapper. The wrapper never prints the credential; do not copy the token out of it or paste it anywhere.
+- Until this tool is on `main`, run it from the branch that carries it: `git show origin/chore/FB-00-windows-git-launcher:tools/paperclip-git.cjs > "$env:PAPERCLIP_SCRATCH_DIR\paperclip-git.cjs"` and call that copy with `node`.
+
 ---
 
 ## 2. Definition of done
