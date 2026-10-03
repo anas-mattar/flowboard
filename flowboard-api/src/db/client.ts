@@ -1,7 +1,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from './schema/index.js';
 
-export type Database = ReturnType<typeof drizzle>;
+export type Database = ReturnType<typeof drizzle<typeof schema>>;
 
 export interface DatabaseHandle {
   readonly db: Database;
@@ -9,13 +10,10 @@ export interface DatabaseHandle {
   close: () => Promise<void>;
 }
 
-/**
- * Creates a Drizzle client over a postgres-js pool.
- * FB-01 adds the schema; FB-00 only proves the connection.
- */
+/** Creates a Drizzle client, bound to the FB-01 schema, over a postgres-js pool. */
 export function createDatabase(connectionString: string, maxConnections = 10): DatabaseHandle {
   const sql = postgres(connectionString, { max: maxConnections, onnotice: () => {} });
-  const db = drizzle(sql);
+  const db = drizzle(sql, { schema });
 
   return {
     db,

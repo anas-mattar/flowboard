@@ -1,4 +1,25 @@
-export { API_VERSION, type ApiVersion } from './constants.js';
+export {
+  API_VERSION,
+  ARCHIVE_RETENTION_DAYS,
+  BOARD_COLORS,
+  DEFAULT_LABELS,
+  DEFAULT_LISTS,
+  POSITION_MIN_GAP,
+  POSITION_STEP,
+  type ApiVersion,
+  type BoardColor,
+  type DefaultLabel,
+  type DefaultList,
+} from './constants.js';
+
+export {
+  PositionError,
+  needsRebalance,
+  positionAtEnd,
+  positionBetween,
+  rebalance,
+} from './position.js';
+
 export { healthResponseSchema, type HealthResponse } from './schemas/health.js';
 export {
   apiErrorSchema,
@@ -6,3 +27,55 @@ export {
   type ApiError,
   type ApiErrorCode,
 } from './schemas/error.js';
+
+export {
+  ACTIVITY_EVENT_TYPES,
+  FUNNEL_EVENT_TYPES,
+  activityEventTypeSchema,
+  funnelEventTypeSchema,
+  type ActivityEventType,
+  type FunnelEventType,
+} from './schemas/events.js';
+
+export {
+  BOARD_ROLES,
+  USER_THEMES,
+  WORKSPACE_PLANS,
+  WORKSPACE_ROLES,
+  boardRoleSchema,
+  userThemeSchema,
+  workspacePlanSchema,
+  workspaceRoleSchema,
+  type BoardRole,
+  type UserTheme,
+  type WorkspacePlan,
+  type WorkspaceRole,
+} from './schemas/roles.js';
+
+export {
+  archivedAtSchema,
+  hexColorSchema,
+  isoTimestampSchema,
+  positionSchema,
+  uuidSchema,
+} from './schemas/entities/common.js';
+
+export {
+  publicUserSchema,
+  userSchema,
+  type PublicUser,
+  type User,
+} from './schemas/entities/user.js';
+export { workspaceSchema, type Workspace } from './schemas/entities/workspace.js';
+export {
+  boardMemberSchema,
+  boardSchema,
+  type Board,
+  type BoardMember,
+} from './schemas/entities/board.js';
+export { labelSchema, type Label } from './schemas/entities/label.js';
+export { listSchema, type List } from './schemas/entities/list.js';
+export { cardSchema, type Card } from './schemas/entities/card.js';
+export { checklistItemSchema, type ChecklistItem } from './schemas/entities/checklist-item.js';
+export { commentSchema, type Comment } from './schemas/entities/comment.js';
+export { activityEventSchema, type ActivityEvent } from './schemas/entities/activity-event.js';

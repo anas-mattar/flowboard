@@ -19,6 +19,7 @@
     "test:integration": "pnpm --recursive --if-present run test:integration",
     "test:e2e": "pnpm --recursive --if-present run test:e2e",
     "db:migrate": "pnpm --filter ./flowboard-api run db:migrate",
+    "db:migrate:down": "pnpm --filter ./flowboard-api run db:migrate:down",
     "db:seed": "pnpm --filter ./flowboard-api --if-present run db:seed",
     "commitlint": "commitlint",
     "prepare": "husky"

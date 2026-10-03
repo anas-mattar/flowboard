@@ -27,6 +27,10 @@ export default defineConfig({
           setupFiles: ['./test/setup/load-dotenv.ts'],
           hookTimeout: 30_000,
           testTimeout: 30_000,
+          // Every file shares the one `DATABASE_URL_TEST` database and
+          // truncates or re-migrates it, so files must not overlap. The
+          // `test:integration` script passes `--no-file-parallelism`;
+          // `fileParallelism` is a runner-wide option and is ignored here.
         },
       },
     ],
