@@ -27,13 +27,21 @@ export class EmailTakenError extends Error {
 /** PostgreSQL `unique_violation`. */
 const UNIQUE_VIOLATION = '23505';
 
+/**
+ * Drizzle wraps a driver error in a `DrizzleQueryError` carrying the original
+ * as `cause`, so the SQLSTATE is not on the error that is thrown. The chain is
+ * walked with a depth bound rather than trusting it to be short.
+ */
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === UNIQUE_VIOLATION
-  );
+  let current: unknown = error;
+
+  for (let depth = 0; depth < 5 && typeof current === 'object' && current !== null; depth += 1) {
+    if ((current as { code?: unknown }).code === UNIQUE_VIOLATION) return true;
+
+    current = (current as { cause?: unknown }).cause;
+  }
+
+  return false;
 }
 
 /**
@@ -111,9 +119,7 @@ export async function createAccount(
       if (workspace === undefined) throw new Error('signup: the workspace insert returned no row');
 
       // CL-A9: the creator is the workspace admin, and in MVP the only one.
-      await tx
-        .insert(workspaceMemberTable)
-        .values({ workspaceId, userId, role: 'admin' });
+      await tx.insert(workspaceMemberTable).values({ workspaceId, userId, role: 'admin' });
 
       // CL-E20: the two funnel events MVP-1 writes at signup.
       await tx.insert(funnelEventTable).values([

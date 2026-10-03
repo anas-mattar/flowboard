@@ -39,6 +39,12 @@ export interface BuildAppOptions {
    * fixtures cannot throttle the next.
    */
   readonly rateLimiter?: RateLimiter;
+  /**
+   * Destination for the structured log. Only the log-scrubbing test in
+   * `test/auth.signup.test.ts` passes one, so it can assert on the real pino
+   * output rather than on a stub (FB-02 §4 item 2).
+   */
+  readonly loggerStream?: NodeJS.WritableStream;
 }
 
 /**
@@ -54,6 +60,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
         paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
         remove: true,
       },
+      ...(options.loggerStream === undefined ? {} : { stream: options.loggerStream }),
     },
     // Honour an inbound request id so logs correlate across the web app and the API.
     genReqId: (req) => {
@@ -72,6 +79,48 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
 
   app.addHook('onSend', async (request, reply) => {
     void reply.header('x-request-id', request.id);
+  });
+
+  // Both handlers must be installed *before* the route plugins below. Fastify
+  // copies the parent's error handler into a child encapsulation context when
+  // that child is registered, so a handler set afterwards never reaches the
+  // `/v1` routes and they fall back to Fastify's own error shape. FB-00 set
+  // these at the end of this function, which FB-02's first route with a
+  // request body exposed (every 422 came back as a bare Fastify 400).
+  app.setNotFoundHandler(async (request, reply) => {
+    await reply
+      .code(404)
+      .send(envelope(API_ERROR_CODES.notFound, `Route ${request.method} ${request.url} not found`));
+  });
+
+  app.setErrorHandler(async (error, request, reply) => {
+    if (hasZodFastifySchemaValidationErrors(error)) {
+      request.log.info({ err: error }, 'request validation failed');
+      return reply
+        .code(422)
+        .send(
+          envelope(API_ERROR_CODES.validationFailed, 'Request validation failed', error.validation),
+        );
+    }
+
+    if (isResponseSerializationError(error)) {
+      request.log.error({ err: error }, 'response serialization failed');
+      return reply.code(500).send(envelope(API_ERROR_CODES.internalError, 'Internal server error'));
+    }
+
+    // The guards above narrow `error` to `unknown`; restore the Fastify shape.
+    const fastifyError = error as FastifyError;
+    const statusCode = fastifyError.statusCode ?? 500;
+
+    if (statusCode >= 500) {
+      request.log.error({ err: fastifyError }, 'unhandled request error');
+      return reply
+        .code(statusCode)
+        .send(envelope(API_ERROR_CODES.internalError, 'Internal server error'));
+    }
+
+    request.log.info({ err: fastifyError }, 'request rejected');
+    return reply.code(statusCode).send(envelope(API_ERROR_CODES.badRequest, fastifyError.message));
   });
 
   // An externally supplied handle belongs to the caller; one we open here is
@@ -128,42 +177,6 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
   );
 
   app.get(`/${API_VERSION}/openapi.json`, { schema: { hide: true } }, async () => app.swagger());
-
-  app.setNotFoundHandler(async (request, reply) => {
-    await reply
-      .code(404)
-      .send(envelope(API_ERROR_CODES.notFound, `Route ${request.method} ${request.url} not found`));
-  });
-
-  app.setErrorHandler(async (error, request, reply) => {
-    if (hasZodFastifySchemaValidationErrors(error)) {
-      request.log.info({ err: error }, 'request validation failed');
-      return reply
-        .code(422)
-        .send(
-          envelope(API_ERROR_CODES.validationFailed, 'Request validation failed', error.validation),
-        );
-    }
-
-    if (isResponseSerializationError(error)) {
-      request.log.error({ err: error }, 'response serialization failed');
-      return reply.code(500).send(envelope(API_ERROR_CODES.internalError, 'Internal server error'));
-    }
-
-    // The guards above narrow `error` to `unknown`; restore the Fastify shape.
-    const fastifyError = error as FastifyError;
-    const statusCode = fastifyError.statusCode ?? 500;
-
-    if (statusCode >= 500) {
-      request.log.error({ err: fastifyError }, 'unhandled request error');
-      return reply
-        .code(statusCode)
-        .send(envelope(API_ERROR_CODES.internalError, 'Internal server error'));
-    }
-
-    request.log.info({ err: fastifyError }, 'request rejected');
-    return reply.code(statusCode).send(envelope(API_ERROR_CODES.badRequest, fastifyError.message));
-  });
 
   await app.ready();
   return app;

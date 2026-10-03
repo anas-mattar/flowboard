@@ -67,7 +67,13 @@ const BOARD_ROLE_CAPABILITIES: Readonly<Record<BoardRole, readonly Capability[]>
     'board.manageMembers',
     'board.manage',
   ],
-  member: ['board.view', 'board.comment', 'board.manageCards', 'board.manageLists', 'board.manageLabels'],
+  member: [
+    'board.view',
+    'board.comment',
+    'board.manageCards',
+    'board.manageLists',
+    'board.manageLabels',
+  ],
   // Observer is read-and-comment only (FS §6 note).
   observer: ['board.view', 'board.comment'],
 };

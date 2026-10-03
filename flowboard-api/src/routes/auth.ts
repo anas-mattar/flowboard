@@ -11,7 +11,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { sessionCookieSecure } from '../config/env.js';
 import { LOGIN_EMAIL_RULE, LOGIN_IP_RULE, SIGNUP_IP_RULE } from '../config/rate-limits.js';
-import { clearSessionCookieOptions, SESSION_COOKIE_NAME, sessionCookieOptions } from '../auth/cookie.js';
+import {
+  clearSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from '../auth/cookie.js';
 import { rateLimitKey, type RateLimiter } from '../auth/rate-limit.js';
 import { hashPassword, verifyAgainstDummy, verifyPassword } from '../auth/password.js';
 import type { RateLimitRule } from '../config/rate-limits.js';
@@ -112,7 +116,14 @@ export function authRoutes(dependencies: RouteDependencies): FastifyPluginAsyncZ
         },
       },
       async (request, reply) => {
-        if (throttled(rateLimiter, reply, SIGNUP_IP_RULE, rateLimitKey('signup:ip', clientIp(request)))) {
+        if (
+          throttled(
+            rateLimiter,
+            reply,
+            SIGNUP_IP_RULE,
+            rateLimitKey('signup:ip', clientIp(request)),
+          )
+        ) {
           return reply;
         }
 
@@ -175,7 +186,9 @@ export function authRoutes(dependencies: RouteDependencies): FastifyPluginAsyncZ
       async (request, reply) => {
         const { email, password, tokenResponse = false } = request.body;
 
-        if (throttled(rateLimiter, reply, LOGIN_IP_RULE, rateLimitKey('login:ip', clientIp(request)))) {
+        if (
+          throttled(rateLimiter, reply, LOGIN_IP_RULE, rateLimitKey('login:ip', clientIp(request)))
+        ) {
           return reply;
         }
 
@@ -188,7 +201,9 @@ export function authRoutes(dependencies: RouteDependencies): FastifyPluginAsyncZ
         // An unknown email still costs one argon2id verification, so the two
         // failures take comparable time (AC 4).
         const ok =
-          user === null ? await verifyAgainstDummy(password) : await verifyPassword(user.passwordHash, password);
+          user === null
+            ? await verifyAgainstDummy(password)
+            : await verifyPassword(user.passwordHash, password);
 
         if (!ok || user === null) {
           request.log.info({ outcome: 'invalid_credentials' }, 'login rejected');

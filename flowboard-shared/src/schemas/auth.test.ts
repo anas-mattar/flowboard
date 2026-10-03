@@ -68,7 +68,8 @@ describe('signupRequestSchema', () => {
     ).toBe(true);
 
     expect(
-      signupRequestSchema.safeParse({ ...valid, password: 'a'.repeat(PASSWORD_MAX_LENGTH) }).success,
+      signupRequestSchema.safeParse({ ...valid, password: 'a'.repeat(PASSWORD_MAX_LENGTH) })
+        .success,
     ).toBe(true);
   });
 });
@@ -129,7 +130,8 @@ describe('authResponseSchema', () => {
   it('rejects a response whose user carries a password hash field value', () => {
     // `userSchema` has no `passwordHash`; the strictness that matters is that
     // the route maps rows through the schema rather than spreading them.
-    expect(authResponseSchema.safeParse({ user: { ...user, email: 'nope' }, workspace }).success)
-      .toBe(false);
+    expect(
+      authResponseSchema.safeParse({ user: { ...user, email: 'nope' }, workspace }).success,
+    ).toBe(false);
   });
 });

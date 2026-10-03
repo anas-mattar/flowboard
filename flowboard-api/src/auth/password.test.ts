@@ -26,7 +26,10 @@ describe('hashPassword', () => {
   });
 
   it('salts, so the same password hashes differently each time', async () => {
-    const [a, b] = await Promise.all([hashPassword('same password'), hashPassword('same password')]);
+    const [a, b] = await Promise.all([
+      hashPassword('same password'),
+      hashPassword('same password'),
+    ]);
 
     expect(a).not.toBe(b);
   });
