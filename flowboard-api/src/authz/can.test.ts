@@ -70,10 +70,23 @@ describe('board capabilities (FS §6 columns 2 to 4)', () => {
     }
   });
 
-  it('does not give a plain workspace member board access without a board role', () => {
-    for (const capability of CAPABILITIES.filter((c) => c.startsWith('board.'))) {
+  it('does not give a plain workspace member access to an existing board', () => {
+    // `board.create` is the exception: it is the one board capability that is
+    // not carried by a board role, because there is no board yet when it is
+    // checked. FS §6 gives it to every workspace member (FB-04 §8).
+    for (const capability of CAPABILITIES.filter(
+      (c) => c.startsWith('board.') && c !== 'board.create',
+    )) {
       expect(can(alice, capability, { workspaceRole: 'member' })).toBe(false);
     }
+  });
+
+  it('lets any workspace member create a board, and nobody outside the workspace (FB-04 §8)', () => {
+    expect(can(alice, 'board.create', { workspaceRole: 'member' })).toBe(true);
+    expect(can(alice, 'board.create', { workspaceRole: 'admin' })).toBe(true);
+    expect(can(alice, 'board.create', {})).toBe(false);
+    // A board role in another workspace is not workspace membership here.
+    expect(can(alice, 'board.create', { boardRole: 'admin' })).toBe(false);
   });
 
   it('denies every board capability with no roles at all', () => {

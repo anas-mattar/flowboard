@@ -11,17 +11,23 @@ import {
 import { openTestDatabase, resetDatabase } from './helpers/database.js';
 
 /**
- * Every FB-02 route × authenticated and unauthenticated (FB-02 §8, AC 16).
+ * Every `/v1` route × authenticated and unauthenticated (FB-02 §8, AC 16).
  *
  * STANDARDS §1.4 requires a route that is not in this matrix to fail CI, so
  * the table below is generated from the application's own route list: adding
  * a `/v1` route without a row here makes `every route is covered` fail.
+ *
+ * This file asserts only the authentication axis — "does this route need a
+ * session at all". The per-role authorisation of the board routes is
+ * `boards.matrix.test.ts`, generated from FB-04 §8.
  */
 
 let handle: DatabaseHandle;
 let app: FastifyInstance;
 let cookie: string;
 let token: string;
+/** A board owned by the matrix account, for the `{id}` routes. */
+let boardId: string;
 
 const account = {
   email: 'matrix@example.test',
@@ -68,6 +74,24 @@ const ROUTES: readonly RouteCase[] = [
     anonymous: 401,
     payload: { theme: 'dark' },
   },
+  // FB-04. `{id}` is substituted with the matrix account's own board, so the
+  // authenticated expectation is the success status rather than a 404.
+  { method: 'GET', url: '/v1/boards', authenticated: 200, anonymous: 401 },
+  {
+    method: 'POST',
+    url: '/v1/boards',
+    authenticated: 201,
+    anonymous: 401,
+    payload: { name: 'Matrix board' },
+  },
+  { method: 'GET', url: '/v1/boards/{id}', authenticated: 200, anonymous: 401 },
+  {
+    method: 'PATCH',
+    url: '/v1/boards/{id}',
+    authenticated: 200,
+    anonymous: 401,
+    payload: { name: 'Matrix renamed' },
+  },
 ];
 
 beforeAll(async () => {
@@ -96,6 +120,14 @@ beforeEach(async () => {
     payload: { email: account.email, password: account.password, tokenResponse: true },
   });
   token = login.json<{ sessionToken: string }>().sessionToken;
+
+  const board = await app.inject({
+    method: 'POST',
+    url: '/v1/boards',
+    payload: { name: 'Matrix fixture board' },
+    ...withSessionCookie(cookie),
+  });
+  boardId = board.json<{ board: { id: string } }>().board.id;
 });
 
 function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'headers'> = {}) {
@@ -103,7 +135,9 @@ function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'header
 
   return app.inject({
     method: route.method,
-    url: route.url,
+    // The table carries the OpenAPI path so the completeness check can compare
+    // it directly; the request needs a real id.
+    url: route.url.replace('{id}', boardId),
     ...(payload === undefined ? {} : { payload }),
     ...auth,
   });

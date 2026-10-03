@@ -162,6 +162,8 @@ Pagination: `GET /v1/boards` only. `starred` in `PATCH` does not bump `updatedAt
 
 No schema change; FB-01 created `board`, `board_member`, `board_star`, `label`, `list`, `card`, `funnel_event` and the indexes `board_workspace_active_idx` and `card_list_active_idx` that the sidebar count and hydration rely on. If the hydration query plan on the seeded data shows a missing index, FB-04 adds it in a new migration and records the query here.
 
+**Measured on the FB-01 seed (3 boards, 11 lists, 18 cards), PostgreSQL 16.10, `EXPLAIN (ANALYZE, BUFFERS)`:** no index is missing, so FB-04 adds no migration. The sidebar query reaches `board` through `board_workspace_active_idx` and its lateral count through `list_board_position_idx` and an index-only scan on `card_list_active_idx`; hydration reads lists through `list_board_position_idx`, cards through `card_list_active_idx`, and the per-card aggregates through the `card_label`, `card_member`, `checklist_item` and `comment` primary keys and indexes. The only sequential scan is on `user` (5 rows) inside the member join, which the planner prefers to an index at that size. Full output is attached to the backend pull request. The 20-list, 1,000-card budget of FS §8 is measured in FB-16, not here.
+
 ### 8. Authorisation
 
 | Capability | Workspace admin | Board admin | Board member | Observer | Workspace member, not on board | Other workspace |
