@@ -1,8 +1,9 @@
 **Backlog item:** FB-00 Repository foundation (tooling)
 **Status:** Ready for approval
 **Approved by:** pending, Paperclip issue TAS-10
-**Owner(s):** FlowBoard Backend (root tooling, `flowboard-shared`, `flowboard-api`, CI, Docker Compose, README), FlowBoard Frontend (`flowboard-web` skeleton and Playwright harness)
+**Owner(s):** FlowBoard Backend (root tooling, `flowboard-shared`, `flowboard-api`, CI, Docker Compose, README), FlowBoard Frontend (`flowboard-web` skeleton, Playwright and axe harness configuration, and the single FB-00 smoke test)
 **Reviewer:** FlowBoard QA (independent review of each pull request)
+**End-to-end ownership rule (applies to FB-00 to FB-04):** FlowBoard Frontend sets up the Playwright and axe harness and writes only the FB-00 smoke test, because the harness is part of the `flowboard-web` skeleton. From FB-02 onward FlowBoard QA writes every Playwright and axe suite under `flowboard-web/e2e/` (FB-02, FB-03, FB-04 and the MVP-1 slice test) in its own tasks, sequenced so that QA and Frontend never write `flowboard-web` at the same time.
 **Increment:** MVP-1
 
 ---
@@ -17,7 +18,7 @@ After FB-00 a fresh clone can be taken to a running API and web app with one doc
 |---|---|---|---|
 | FS | §10 | v1.0 is delivered by a team of three engineers in 10 to 12 weeks; shared tooling is the precondition for three people working in parallel | [ENG] |
 | FS | §7 | REST over HTTPS with JSON bodies at `/v1`; the API skeleton exposes the `/v1` prefix and OpenAPI from day one | [REQ] |
-| FS | §8 security | No secrets in the repository; `.env.example` and secret scanning (STANDARDS §1.5) | [REQ] |
+| STANDARDS | §1.5 | No secrets in the repository; `.env.example` and secret scanning. FS §8 lists TLS, hashing, SSO, audit log and rate limiting but says nothing about secrets in git; this rule is an engineering standard | [ENG] |
 | FS | §8 accessibility | axe-core runs on every end-to-end run from FB-03 onward; the harness is set up here | [REQ] |
 | BM | §10 | Key-person risk: boring, documented tooling and a README that gets anyone running | [REQ] |
 | CL | CL-D9 | Approved stack: TypeScript, Fastify, PostgreSQL with Drizzle, React with Vite, pnpm monorepo with `flowboard-api`, `flowboard-web`, `flowboard-shared` | [REQ] |
@@ -51,8 +52,8 @@ After FB-00 a fresh clone can be taken to a running API and web app with one doc
 
 1. **[ENG, TAS-7 FB-00]** On a machine with Node 22, pnpm and Docker, the README sequence from `git clone` to an API answering `GET /v1/health` and a web app serving `/` completes in under 15 minutes. QA measures and records the wall-clock time.
 2. **[ENG, STANDARDS §1.1]** `pnpm typecheck` passes with the strict base config in all three packages, and `pnpm lint` passes with zero warnings.
-3. **[REQ, FS §7]** `GET /v1/health` returns `200 { "status": "ok", "version": "<package version>" }` validated by the `HealthResponse` schema from `flowboard-shared`, and `GET /v1/openapi.json` returns an OpenAPI 3 document listing that route.
-4. **[REQ, STANDARDS §1.5]** The API refuses to start when `DATABASE_URL` is unset and the error message names the variable. No file in the repository matches the secret-scanning rules; `.env.example` exists and `.env` is ignored.
+3. **[ENG, under the FS §7 `/v1` prefix]** `GET /v1/health` returns `200 { "status": "ok", "version": "<package version>" }` validated by the `HealthResponse` schema from `flowboard-shared`, and `GET /v1/openapi.json` returns an OpenAPI 3 document listing that route.
+4. **[ENG, STANDARDS §1.5]** The API refuses to start when `DATABASE_URL` is unset and the error message names the variable. No file in the repository matches the secret-scanning rules; `.env.example` exists and `.env` is ignored.
 5. **[ENG, CL-E21]** `docker compose up -d` creates both databases; the integration smoke test connects to `flowboard_test` and passes; the development database is untouched by test runs.
 6. **[ENG, TAS-7 FB-00]** CI on a pull request runs lint, typecheck, unit, integration, build, Playwright smoke, dependency audit and secret scanning as separate named jobs or steps, and a deliberately failing unit test on a scratch branch turns the run red (evidence: one red and one green run linked on the task).
 7. **[REQ, FS §8 accessibility]** The Playwright smoke test asserts zero axe-core violations on `/`.

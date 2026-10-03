@@ -1,7 +1,7 @@
 **Backlog item:** FB-02 Accounts and workspace bootstrap
 **Status:** Ready for approval
 **Approved by:** pending, Paperclip issue TAS-10
-**Owner(s):** FlowBoard Backend (`flowboard-api` auth and me routes, `flowboard-shared` request/response schemas), FlowBoard Frontend (`flowboard-web` signup, login, logout and session handling)
+**Owner(s):** FlowBoard Backend (`flowboard-api` auth and me routes, `flowboard-shared` request/response schemas), FlowBoard Frontend (`flowboard-web` signup, login, logout and session handling), FlowBoard QA (`flowboard-web/e2e/FB-02-accounts.spec.ts` Playwright and axe suite, §10, in a separate task after the Frontend task; see the end-to-end ownership rule in FB-00)
 **Reviewer:** FlowBoard QA
 **Increment:** MVP-1
 
@@ -21,7 +21,8 @@ A visitor can create an account with an email and password and is immediately in
 | FS | §6 | Workspace admin role exists; FS does not say how it is assigned | [REQ] |
 | FS | §4.1 | Sidebar footer shows current user avatar, name and workspace role (consumer of `GET /v1/me`) | [REQ] |
 | FS | §9 | Prototype hard-codes the signed-in user; production needs real authentication | [REQ] |
-| BM | §1, §9 | Time-to-first-board under two minutes; time to first card under two minutes | [REQ] |
+| BM | §1 | Time-to-first-board under two minutes | [REQ] |
+| BM | §9 | Related activation metric "time to first card under two minutes"; the first card is FB-06, but signup is on its critical path | [REQ] |
 | BM | §13.3 | Instrument the funnel with v1.0 | [REQ] |
 | CL | CL-E5 | Email and password, argon2id, cookie sessions plus bearer tokens, no email verification in MVP | [REQ] |
 | CL | CL-E9 | Session token, cookie attributes, bearer path, `Origin` check | [ENG] |
@@ -44,6 +45,7 @@ A visitor can create an account with an email and password and is immediately in
 - Shared: `SignupRequest`, `LoginRequest`, `AuthResponse`, `MeResponse`, `MePatch`, `ApiError` schemas.
 - Frontend: routes `/signup` and `/login` with inline validation, the API client with credentials included, a `useSession()` query, redirect to `/` after signup or login, a `Sign out` action (surfaced in the sidebar footer by FB-03; until then on the placeholder page), and the `/` placeholder reading "Signed in as <name>" that FB-03 replaces. Theme is applied from `GET /v1/me` on load (the toggle itself is FB-03).
 - Message catalogue keys for all new strings.
+- QA: the Playwright and axe suite in §10, written against the merged Frontend work (Frontend ships the flows and the unit tests; QA ships the end-to-end coverage).
 
 **Out of scope**
 
@@ -167,7 +169,7 @@ Covered by `flowboard-api/test/auth.matrix.test.ts` (every route × authenticate
 |---|---|---|
 | Unit | `auth/password.test.ts` (hash verifies, wrong password fails, parameters), `auth/session-token.test.ts` (entropy, hashing), `users/initials.test.ts`, `users/avatar-color.test.ts`, `authz/can.test.ts`, `flowboard-shared` schema tests for `SignupRequest` and `LoginRequest` boundaries | AC 2, 3, 12, 16 |
 | Integration | `test/auth.signup.test.ts` (happy path, transaction rollback, every 422 case, 409 case-insensitive, log scrubbing); `test/auth.login.test.ts` (success, wrong password, unknown email timing within tolerance, tokenResponse); `test/auth.session.test.ts` (cookie attributes, bearer parity, expiry, renewal, logout); `test/auth.origin.test.ts`; `test/auth.ratelimit.test.ts`; `test/me.test.ts`; `test/auth.matrix.test.ts` | AC 1 to 11, 16 |
-| End to end | `flowboard-web/e2e/FB-02-accounts.spec.ts`: `FB-02 signs up and lands signed in`, `FB-02 rejects invalid signup inline`, `FB-02 logs in with seeded user`, `FB-02 shows one message for bad credentials`, `FB-02 signs out and is redirected to login`, `FB-02 redirects signed-out visitor to login`, `FB-02 keyboard-only signup` | AC 13, 14, 15 |
+| End to end (QA) | `flowboard-web/e2e/FB-02-accounts.spec.ts`: `FB-02 signs up and lands signed in`, `FB-02 rejects invalid signup inline`, `FB-02 logs in with seeded user`, `FB-02 shows one message for bad credentials`, `FB-02 signs out and is redirected to login`, `FB-02 redirects signed-out visitor to login`, `FB-02 keyboard-only signup` | AC 13, 14, 15 |
 | Accessibility | axe on `/signup` and `/login` in both themes, including the error state | AC 14 |
 | Performance | None until FB-16 | |
 

@@ -1,7 +1,7 @@
 **Backlog item:** FB-03 App shell
 **Status:** Ready for approval
 **Approved by:** pending, Paperclip issue TAS-10
-**Owner(s):** FlowBoard Frontend (`flowboard-web` only)
+**Owner(s):** FlowBoard Frontend (`flowboard-web` components, routing, theme, primitives and unit tests), FlowBoard QA (`flowboard-web/e2e/FB-03-shell.spec.ts` Playwright and axe suite, §10, in a separate task after the Frontend task; see the end-to-end ownership rule in FB-00)
 **Reviewer:** FlowBoard QA
 **Increment:** MVP-1
 
@@ -45,6 +45,7 @@ A signed-in user sees the FlowBoard frame from the prototype: a collapsible side
 - Tailwind set up to consume the CSS variables from FB-00; no raw colour values in components.
 - Responsive: at and below 768 px the sidebar overlays the content and is closed by default; above, it pushes content (FS §8).
 - Empty content state component used by FB-04 when no boards exist.
+- QA: the Playwright and axe suite in §10, written against the merged Frontend work.
 
 **Out of scope**
 
@@ -112,7 +113,7 @@ Client-side route guard only (redirects); the server enforces authentication on 
 |---|---|---|
 | Unit (Vitest + Testing Library) | `theme.test.tsx` (initial from storage, system preference, PATCH called on change); `Toast.test.tsx` (render within 200 ms, auto-dismiss, pause on hover); `Dialog.test.tsx` (focus trap, Esc, restore); `ConfirmDialog.test.tsx` (no scrim close); `routeGuard.test.tsx` (`next` handling) | AC 1, 2, 5, 7, 8 |
 | Integration | None (no API change) | |
-| End to end | `flowboard-web/e2e/FB-03-shell.spec.ts`: `X-02 toggles theme instantly and persists across reload`, `X-02 theme follows the user into a second browser context`, `X-04 collapses the sidebar and expands the content`, `X-04 collapse state persists on reload`, `FB-03 redirects signed-out visitor and returns to next after login`, `FB-03 tab order and focus rings`, `FB-03 shell at 768 px overlays sidebar`, `FB-03 RTL renders without breakage` | AC 1, 3, 4, 5, 6, 9, 10, 11 |
+| End to end (QA) | `flowboard-web/e2e/FB-03-shell.spec.ts`: `X-02 toggles theme instantly and persists across reload`, `X-02 theme follows the user into a second browser context`, `X-04 collapses the sidebar and expands the content`, `X-04 collapse state persists on reload`, `FB-03 redirects signed-out visitor and returns to next after login`, `FB-03 tab order and focus rings`, `FB-03 shell at 768 px overlays sidebar`, `FB-03 RTL renders without breakage` | AC 1, 3, 4, 5, 6, 9, 10, 11 |
 | Accessibility | axe on the shell: light and dark, sidebar expanded and collapsed, footer menu open, a dialog open | AC 6 |
 | Performance | None until FB-16 | |
 

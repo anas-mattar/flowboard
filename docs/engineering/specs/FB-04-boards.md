@@ -30,14 +30,15 @@ A signed-in user can create a board, see it in the sidebar with its colour and c
 | FS | X-01 | Toast within 200 ms for create, rename, star, archive | [REQ] |
 | FS | X-03 | Enter submits the create form and the title; Esc cancels | [REQ] |
 | FS | §8 | Accessibility: keyboard-operable, focus management, text alongside colour | [REQ] |
-| BM | §1, §9 | Time-to-first-board under two minutes | [REQ] |
+| BM | §1 | Time-to-first-board under two minutes | [REQ] |
+| BM | §9 | Related activation metric "time to first card under two minutes"; measured in FB-06 and FB-18, cited here only because the board is its precondition | [REQ] |
 | BM | §2.3, §5 | Flow discipline on the first board (WIP 3 on Doing); clear empty states | [REQ] |
 | BM | §13.3 | Funnel event `board.created` | [REQ] |
 | CL | CL-A7 | Default lists To Do, Doing (WIP 3), Done | [REQ] |
 | CL | CL-D3 | Six default labels seeded on board creation | [REQ] |
-| CL | CL-A2, CL-E16 | Delete is archive with confirmation; one "Archive board" action in MVP-1 | [REQ] |
+| CL | CL-A2, CL-E16 | Delete is archive with confirmation; one "Archive board" action in MVP-1 | [REQ] (the menu wording is CL-O7, put to Anas with this specification) |
 | CL | CL-E14 | Star per user in `board_star` | [ENG] |
-| CL | CL-E15 | Board colour from the PT palette; `color` accepted by PATCH, no UI | [ENG] |
+| CL | CL-E15 | Board colour from the PT palette; `color` accepted by PATCH, no UI | [ENG] (the palette-cycling rule is CL-O8, put to Anas with this specification) |
 | CL | CL-E17 | Visibility rule and card count definition | [ENG] |
 | CL | CL-E18 | `If-Match` optional in MVP-1; web app always sends it | [ENG] |
 | CL | CL-E20 | Funnel event `board.created` | [ENG] |
@@ -203,4 +204,9 @@ Covered by `flowboard-api/test/boards.matrix.test.ts`, generated from this table
 
 ### 12. Open questions
 
-None requiring Anas beyond the engineering decisions CL-E14 to CL-E18 and CL-E20, which are confirmed by accepting this specification set. One note for awareness: FS §7 lists no `DELETE /v1/boards/{id}`, and CL-A2 makes delete and archive the same action, so MVP-1 exposes "Archive board" only; if Anas wants a visibly separate "Delete" wording in the menu, it is a copy change with no API impact.
+For Anas, answered with the TAS-10 acceptance card. The engineering decisions CL-E14 to CL-E18 and CL-E20 are confirmed by accepting this specification set; the two items below are user-facing choices inside those decisions and are listed separately so they are decided explicitly.
+
+1. **CL-O7 Board menu wording: "Archive board" only, no separate "Delete".** FS §7 lists no `DELETE /v1/boards/{id}` and CL-A2 makes delete and archive the same action, so MVP-1 exposes one menu item, "Archive board", behind a confirmation dialog (CL-E16). Recommendation: accept. If Anas prefers a visible "Delete" wording that behaves as archive, it is a one-string change in the message catalogue with no API or data impact, and can be made at any time.
+2. **CL-O8 Default board colour.** FS and PT only say a board has a colour swatch (B-01) and show a five-colour palette. A new board takes the next palette colour, cycling by the number of boards ever created in the workspace (CL-E15); no recolour control ships in MVP-1 because FS §4 defines none, though the API accepts `color`. Recommendation: accept as the MVP-1 default. The rule is one function in `flowboard-shared`; if Anas wants a colour picker on creation or in the board menu, it is a small FB-04 follow-up, not a data change.
+
+If accepted, CL-O7 and CL-O8 move to `CLARIFICATIONS.md` §2 as recorded answers and this section is replaced by those references.
