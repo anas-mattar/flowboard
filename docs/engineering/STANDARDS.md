@@ -108,7 +108,7 @@ These run on CI independently of any single task once the relevant backlog item 
 |---|---|---|
 | Performance budget on the seeded 20-list, 1,000-card board: hydration under 1.5 s on a throttled 10 Mbps profile, drag frame drops below threshold | Every pull request from FB-16 onward; fails CI when exceeded | FS §8 performance; BM §2.3, §9 |
 | axe-core accessibility job on every end-to-end run | Every pull request from FB-03 onward | FS §8 WCAG 2.2 AA |
-| Dependency audit (`pnpm audit` at high severity) | Every pull request and nightly | FS §8 security |
+| Dependency audit (`pnpm audit` at high severity) | Every pull request and nightly | Engineering choice (no FS source; supply-chain hygiene that supports, but is not required by, the FS §8 security row) |
 | Secret scanning | Every pull request | §1.5 |
 
 ---
