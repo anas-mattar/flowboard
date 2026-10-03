@@ -1,0 +1,20 @@
+title = "FlowBoard secret scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+The local PostgreSQL password is the documented throwaway value from CL-E21.
+It exists only in the Docker Compose file, the CI service container and the
+example environment file, and grants access to nothing outside an ephemeral
+container (STANDARDS §1.5).
+"""
+paths = [
+  '''^docker-compose\.yml$''',
+  '''^docker/postgres/init/.*\.sql$''',
+  '''^\.env\.example$''',
+  '''^\.github/workflows/ci\.yml$''',
+  '''^README\.md$''',
+  '''^docs/''',
+]
