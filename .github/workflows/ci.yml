@@ -122,6 +122,61 @@ jobs:
             -c "CREATE DATABASE flowboard_test OWNER flowboard;"
       - run: pnpm test:integration
 
+  compose-smoke:
+    # Proves FB-00 acceptance criterion 5 (CL-E21): the committed docker-compose.yml
+    # really does bring up PostgreSQL 16 with both `flowboard` and `flowboard_test`.
+    # The `integration` job above uses a GitHub service container and therefore never
+    # exercises docker/postgres/init; this job does, end to end.
+    name: Docker Compose smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Record the Docker and Compose versions
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Use the documented .env.example values
+        # Same step the README quickstart tells a developer to run. The values are the
+        # documented local throwaway credentials, not secrets (STANDARDS §1.5, CL-E21).
+        run: cp .env.example .env
+
+      - name: docker compose up -d --wait
+        run: docker compose up -d --wait
+
+      - name: Assert both databases exist (FB-00 §4 item 5, CL-E21)
+        run: |
+          set -euo pipefail
+          names=$(docker compose exec -T postgres \
+            psql -U flowboard -d flowboard -tAc \
+            "SELECT datname FROM pg_database WHERE datname IN ('flowboard','flowboard_test') ORDER BY datname")
+          echo "pg_database returned:"
+          echo "$names"
+          expected=$(printf 'flowboard\nflowboard_test')
+          if [ "$names" != "$expected" ]; then
+            echo "::error::expected both 'flowboard' and 'flowboard_test'; got: $(echo "$names" | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "Both databases are present."
+
+      - name: Integration tests against the compose database
+        # DATABASE_URL / DATABASE_URL_TEST come from the .env copied above, so the
+        # init-script path is what the suite actually connects to.
+        run: pnpm test:integration
+
+      - name: docker compose down -v
+        if: always()
+        run: docker compose down -v
+
   build:
     name: Build
     runs-on: ubuntu-latest

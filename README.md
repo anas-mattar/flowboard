@@ -74,6 +74,29 @@ recreates both databases on the next `docker compose up -d`.
 CI runs all of the above plus `pnpm audit --audit-level high` and gitleaks secret
 scanning on every pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
+### Verification
+
+Every FB-00 acceptance criterion that has a backend surface today is proven by a named
+job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) rather than by a local run
+that nobody else can see. The criteria that depend on `flowboard-web` are listed as
+pending — they have no CI job until that package lands:
+
+| What is proven                                                                           | Job                                  |
+| ---------------------------------------------------------------------------------------- | ------------------------------------ |
+| Lint, formatting, strict typecheck, unit tests, build                                    | `lint`, `typecheck`, `unit`, `build` |
+| Conventional Commits on the pull request range                                           | `commitlint`                         |
+| Integration tests against a real PostgreSQL 16                                           | `integration`                        |
+| **AC 5** — `docker compose up -d` creates both `flowboard` and `flowboard_test` (CL-E21) | **`compose-smoke`**                  |
+| No high-severity advisories, no committed secrets                                        | `audit`, `secret-scan`               |
+| **AC 6 (Playwright smoke part)** and **AC 7** — axe-core has zero violations on `/`      | _pending `flowboard-web`_            |
+
+`compose-smoke` runs the committed `docker-compose.yml` on a GitHub-hosted runner with
+the `.env.example` values, queries `pg_database` for both database names, runs
+`pnpm test:integration` against the compose-started `flowboard_test`, and tears the
+stack down with `docker compose down -v`. Unlike `integration`, which uses a GitHub
+service container, it exercises `docker/postgres/init/` end to end — so the init script
+that creates `flowboard_test` cannot silently rot.
+
 ## Environment variables
 
 Every variable is documented in [`.env.example`](.env.example). The API refuses to
