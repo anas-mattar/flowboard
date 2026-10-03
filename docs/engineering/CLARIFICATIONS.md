@@ -98,6 +98,14 @@ These decisions were needed to write the FB-00 to FB-04 specifications. They are
 | **CL-E20** | Funnel events written by MVP-1 | BM §13.3 (instrument the funnel with v1.0); CL-A5; FB-18 owns the activation query | FB-02 writes `user.signed_up` and `workspace.created`; FB-04 writes `board.created`. The remaining events (first card, invite sent, invite accepted, activation) and the activation query are FB-18. Event names live in one enum in `flowboard-shared`. | `funnel_event` rows from day one; no analytics vendor. | FB-02, FB-04 |
 | **CL-E21** | Local development database | CL-D8 (no cloud dependency); STANDARDS §1.5 | PostgreSQL 16 runs from `docker-compose.yml` with database `flowboard`, user `flowboard`, password `flowboard` on port 5432, documented in the README as non-secret. Integration tests use a second database `flowboard_test` on the same instance, created by the compose init script, so a test run never truncates development data. | `.env.example` carries both connection strings. | FB-00 |
 
+### 3.2 Engineering decisions recorded during implementation (3 October 2026, FB-01)
+
+Decisions that surfaced while implementing an approved specification. Each is an engineering choice inside the approved scope; none changes a requirement, an API shape or a data model. The specification text is amended in the same pull request so the two never disagree, and the amendment cites the entry here.
+
+| ID | Topic | Resolves | Decision | Consequence | Spec |
+|---|---|---|---|---|---|
+| **CL-E22** | Migration numbering starts at `0000` | FB-01 spec §7 (as approved) named the first migration `0001_init`; `drizzle-kit` numbers migrations from `0000` and requires contiguous zero-based tags in `drizzle/meta/_journal.json`, so a renamed file breaks `drizzle-kit generate` (verified by FlowBoard Backend on Paperclip issue TAS-16) | The tool's numbering wins. The first migration is `0000_init.sql` with `0000_init.down.sql`; later migrations are `0001_…`, `0002_…` as generated. Migration names are never hand-edited. The spec text is amended to match (FB-01 §7); the approved content of the migration is unchanged. | Nothing to change in code: `main` already carries `0000_init` (PR #13, merge `d2974dc`). Future specs name migrations by purpose only ("one migration adding `x`") and leave the number to the tool. | FB-01 |
+
 ---
 
 ## 4. Open engineering assumptions
