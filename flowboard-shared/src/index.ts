@@ -7,6 +7,7 @@ export {
   DEFAULT_LISTS,
   POSITION_MIN_GAP,
   POSITION_STEP,
+  nextBoardColor,
   type ApiVersion,
   type AvatarColor,
   type BoardColor,
@@ -97,6 +98,33 @@ export {
   type LoginRequest,
   type SignupRequest,
 } from './schemas/auth.js';
+
+export {
+  boardCallerRoleSchema,
+  boardCreateSchema,
+  boardHydratedSchema,
+  boardListQuerySchema,
+  boardListSchema,
+  boardMemberViewSchema,
+  boardNameFieldSchema,
+  boardPatchSchema,
+  boardSummarySchema,
+  cardSummarySchema,
+  listWithCardsSchema,
+  BOARD_LIST_DEFAULT_LIMIT,
+  BOARD_LIST_MAX_LIMIT,
+  BOARD_NAME_MAX_LENGTH,
+  type BoardCallerRole,
+  type BoardCreate,
+  type BoardHydrated,
+  type BoardList,
+  type BoardListQuery,
+  type BoardMemberView,
+  type BoardPatch,
+  type BoardSummary,
+  type CardSummary,
+  type ListWithCards,
+} from './schemas/board.js';
 
 export {
   meResponseSchema,

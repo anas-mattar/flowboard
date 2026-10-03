@@ -31,6 +31,10 @@ export const API_ERROR_CODES = {
   forbidden: 'forbidden',
   badOrigin: 'bad_origin',
   rateLimited: 'rate_limited',
+  // FB-04 §6. The optimistic-concurrency failure of FS §7.1: the `If-Match`
+  // the client sent is not the resource's current `updatedAt`, so the client
+  // re-fetches rather than overwriting someone else's edit (CL-E18).
+  stale: 'stale',
 } as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
