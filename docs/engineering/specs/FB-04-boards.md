@@ -1,6 +1,6 @@
 **Backlog item:** FB-04 Boards
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Backend (`flowboard-api` board routes, `flowboard-shared` board schemas), FlowBoard Frontend (`flowboard-web` sidebar board list, create board, board page, title, star, archive)
 **Reviewer:** FlowBoard QA; QA also owns the slice-level acceptance test (§10)
 **Increment:** MVP-1
@@ -30,14 +30,15 @@ A signed-in user can create a board, see it in the sidebar with its colour and c
 | FS | X-01 | Toast within 200 ms for create, rename, star, archive | [REQ] |
 | FS | X-03 | Enter submits the create form and the title; Esc cancels | [REQ] |
 | FS | §8 | Accessibility: keyboard-operable, focus management, text alongside colour | [REQ] |
-| BM | §1, §9 | Time-to-first-board under two minutes | [REQ] |
+| BM | §1 | Time-to-first-board under two minutes | [REQ] |
+| BM | §9 | Related activation metric "time to first card under two minutes"; measured in FB-06 and FB-18, cited here only because the board is its precondition | [REQ] |
 | BM | §2.3, §5 | Flow discipline on the first board (WIP 3 on Doing); clear empty states | [REQ] |
 | BM | §13.3 | Funnel event `board.created` | [REQ] |
 | CL | CL-A7 | Default lists To Do, Doing (WIP 3), Done | [REQ] |
 | CL | CL-D3 | Six default labels seeded on board creation | [REQ] |
-| CL | CL-A2, CL-E16 | Delete is archive with confirmation; one "Archive board" action in MVP-1 | [REQ] |
+| CL | CL-A2, CL-E16 | Delete is archive with confirmation; one "Archive board" action in MVP-1 | [REQ] (the menu wording is CL-O7, put to Anas with this specification) |
 | CL | CL-E14 | Star per user in `board_star` | [ENG] |
-| CL | CL-E15 | Board colour from the PT palette; `color` accepted by PATCH, no UI | [ENG] |
+| CL | CL-E15 | Board colour from the PT palette; `color` accepted by PATCH, no UI | [ENG] (the palette-cycling rule is CL-O8, put to Anas with this specification) |
 | CL | CL-E17 | Visibility rule and card count definition | [ENG] |
 | CL | CL-E18 | `If-Match` optional in MVP-1; web app always sends it | [ENG] |
 | CL | CL-E20 | Funnel event `board.created` | [ENG] |
@@ -203,4 +204,7 @@ Covered by `flowboard-api/test/boards.matrix.test.ts`, generated from this table
 
 ### 12. Open questions
 
-None requiring Anas beyond the engineering decisions CL-E14 to CL-E18 and CL-E20, which are confirmed by accepting this specification set. One note for awareness: FS §7 lists no `DELETE /v1/boards/{id}`, and CL-A2 makes delete and archive the same action, so MVP-1 exposes "Archive board" only; if Anas wants a visibly separate "Delete" wording in the menu, it is a copy change with no API impact.
+None open. The engineering decisions CL-E14 to CL-E18 and CL-E20 were confirmed, and the two user-facing choices put to Anas with this specification were accepted, on 3 October 2026 (TAS-10 confirmation card). They are recorded in `CLARIFICATIONS.md` §2.1:
+
+- CL-O7 (one "Archive board" menu item behind a confirmation dialog, no separate "Delete" wording) is recorded as **CL-A11**.
+- CL-O8 (a new board takes the next colour of the five-colour PT palette, cycling by boards ever created in the workspace) is recorded as **CL-A12**.
