@@ -13,6 +13,21 @@ export const envSchema = z.object({
   CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   DATABASE_URL: z.string().min(1, 'must be a PostgreSQL connection string'),
   DATABASE_URL_TEST: z.string().min(1).optional(),
+
+  // FB-02 §9. The single browser origin that may send a cookie-authenticated
+  // mutation (CL-E9). Distinct from `CORS_ORIGIN`, which may list several.
+  WEB_ORIGIN: z.string().min(1).default('http://localhost:5173'),
+
+  // `Secure` on the session cookie. Defaults from `NODE_ENV` in
+  // `sessionCookieSecure()` so local development over http still works.
+  SESSION_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+
+  // Tests only: turns the auth rate limiter into a no-op so the other
+  // integration files are not throttled by their own fixtures (FB-02 §9).
+  RATE_LIMIT_DISABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -30,6 +45,17 @@ export function corsOrigins(env: Env): string[] {
   return env.CORS_ORIGIN.split(',')
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
+}
+
+/**
+ * Whether the `fb_session` cookie carries `Secure` (FB-02 §4 item 5).
+ * `SESSION_COOKIE_SECURE` overrides; otherwise it is on everywhere except
+ * local development, where the web app is served over plain http.
+ */
+export function sessionCookieSecure(env: Env): boolean {
+  if (env.SESSION_COOKIE_SECURE !== undefined) return env.SESSION_COOKIE_SECURE === 'true';
+
+  return env.NODE_ENV !== 'development';
 }
 
 /**

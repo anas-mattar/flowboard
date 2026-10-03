@@ -33,6 +33,19 @@ export const BOARD_COLORS = ['#3d6df0', '#8f5bff', '#22a06b', '#e2703a', '#c9372
 
 export type BoardColor = (typeof BOARD_COLORS)[number];
 
+/**
+ * Avatar colours (PT `USERS[].color`, FS §5 `avatar_color`). A new user is
+ * assigned one deterministically by hashing their id (FB-02 §4 item 12), so
+ * the same user always renders the same colour on every device without
+ * storing a choice the user never made.
+ *
+ * The values coincide with `BOARD_COLORS` in the prototype, but the two are
+ * separate vocabularies: re-theming boards must not re-colour people.
+ */
+export const AVATAR_COLORS = ['#3d6df0', '#8f5bff', '#22a06b', '#e2703a', '#c9372c'] as const;
+
+export type AvatarColor = (typeof AVATAR_COLORS)[number];
+
 /** A list created automatically with every new board (B-02). */
 export interface DefaultList {
   readonly name: string;
