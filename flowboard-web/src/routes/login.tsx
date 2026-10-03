@@ -34,10 +34,17 @@ function LoginPage() {
     email: useRef<HTMLInputElement>(null),
     password: useRef<HTMLInputElement>(null),
   };
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fieldRefs.email.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (serverError && !submitting) {
+      submitRef.current?.focus();
+    }
+  }, [serverError, submitting]);
 
   function validateField(field: keyof LoginValues, value: string): string | undefined {
     const result = loginRequestSchema.shape[field].safeParse(value);
@@ -130,7 +137,7 @@ function LoginPage() {
           }}
           error={errors.password}
         />
-        <button type="submit" className="auth-card__submit" disabled={submitting}>
+        <button ref={submitRef} type="submit" className="auth-card__submit" disabled={submitting}>
           {messages.auth.login.submit}
         </button>
         <Link to="/signup" className="auth-card__link">

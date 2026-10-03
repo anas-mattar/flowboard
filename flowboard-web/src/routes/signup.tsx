@@ -36,10 +36,17 @@ function SignupPage() {
     email: useRef<HTMLInputElement>(null),
     password: useRef<HTMLInputElement>(null),
   };
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fieldRefs.displayName.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (serverError && !submitting) {
+      submitRef.current?.focus();
+    }
+  }, [serverError, submitting]);
 
   function validateField(field: keyof SignupValues, value: string): string | undefined {
     const result = signupRequestSchema.shape[field].safeParse(value);
@@ -150,7 +157,7 @@ function SignupPage() {
           }}
           error={errors.password}
         />
-        <button type="submit" className="auth-card__submit" disabled={submitting}>
+        <button ref={submitRef} type="submit" className="auth-card__submit" disabled={submitting}>
           {messages.auth.signup.submit}
         </button>
         <Link to="/login" className="auth-card__link">
