@@ -26,7 +26,13 @@ export const CAPABILITIES = [
   'workspace.manageMembers',
   'workspace.manageBilling',
 
-  // Board-level (FS §6). Resolved in FB-04; see `boardCapability` below.
+  // Board-level (FS §6). The rows are wired in FB-04.
+  //
+  // `board.create` is the one board capability that is *not* carried by a
+  // board role: there is no board yet when it is checked. It belongs to any
+  // workspace member (FS §6 "member" row, FB-04 §8), so it is resolved from
+  // the workspace role below.
+  'board.create',
   'board.view',
   'board.comment',
   'board.manageCards',
@@ -118,6 +124,10 @@ export function can(
   }
 
   if (capability.startsWith('board.')) {
+    // Creating a board needs only workspace membership (FB-04 §8): every role
+    // in the workspace may do it, and nobody outside it may.
+    if (capability === 'board.create') return workspaceRole !== undefined;
+
     if (workspaceRole === 'admin' && WORKSPACE_ADMIN_BOARD_CAPABILITIES.includes(capability)) {
       return true;
     }

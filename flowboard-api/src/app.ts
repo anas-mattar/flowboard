@@ -17,6 +17,7 @@ import { RateLimiter } from './auth/rate-limit.js';
 import { corsOrigins, type Env } from './config/env.js';
 import { createDatabase, type DatabaseHandle } from './db/client.js';
 import { authRoutes } from './routes/auth.js';
+import { boardRoutes } from './routes/boards.js';
 import { healthRoutes } from './routes/health.js';
 import { meRoutes } from './routes/me.js';
 import { API_PACKAGE_VERSION } from './version.js';
@@ -160,6 +161,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
         { name: 'system', description: 'Health and service metadata' },
         { name: 'auth', description: 'Signup, login and logout (FB-02)' },
         { name: 'me', description: 'The signed-in user (FB-02)' },
+        { name: 'boards', description: 'Boards, their lists and cards (FB-04)' },
       ],
     },
     transform: jsonSchemaTransform,
@@ -172,6 +174,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
       await versioned.register(healthRoutes);
       await versioned.register(authRoutes(dependencies));
       await versioned.register(meRoutes(dependencies));
+      await versioned.register(boardRoutes(dependencies));
     },
     { prefix: `/${API_VERSION}` },
   );
