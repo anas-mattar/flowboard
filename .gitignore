@@ -1,0 +1,22 @@
+# Local tool state
+.claude/
+.worktrees/
+
+# Environment files (see docs/engineering/STANDARDS.md, "No secrets in git")
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output (reserved for the implementation tasks)
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
