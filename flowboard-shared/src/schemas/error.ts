@@ -22,6 +22,15 @@ export const API_ERROR_CODES = {
   notFound: 'not_found',
   validationFailed: 'validation_failed',
   internalError: 'internal_error',
+  // FB-02 §6. `invalidCredentials` is deliberately one code for both a wrong
+  // password and an unknown email (CL-E10: never reveal whether an email is
+  // registered).
+  emailTaken: 'email_taken',
+  invalidCredentials: 'invalid_credentials',
+  unauthenticated: 'unauthenticated',
+  forbidden: 'forbidden',
+  badOrigin: 'bad_origin',
+  rateLimited: 'rate_limited',
 } as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];

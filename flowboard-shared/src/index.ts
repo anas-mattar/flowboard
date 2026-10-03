@@ -1,12 +1,14 @@
 export {
   API_VERSION,
   ARCHIVE_RETENTION_DAYS,
+  AVATAR_COLORS,
   BOARD_COLORS,
   DEFAULT_LABELS,
   DEFAULT_LISTS,
   POSITION_MIN_GAP,
   POSITION_STEP,
   type ApiVersion,
+  type AvatarColor,
   type BoardColor,
   type DefaultLabel,
   type DefaultList,
@@ -79,3 +81,28 @@ export { cardSchema, type Card } from './schemas/entities/card.js';
 export { checklistItemSchema, type ChecklistItem } from './schemas/entities/checklist-item.js';
 export { commentSchema, type Comment } from './schemas/entities/comment.js';
 export { activityEventSchema, type ActivityEvent } from './schemas/entities/activity-event.js';
+
+export {
+  authResponseSchema,
+  displayNameFieldSchema,
+  emailFieldSchema,
+  loginRequestSchema,
+  passwordFieldSchema,
+  signupRequestSchema,
+  DISPLAY_NAME_MAX_LENGTH,
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  type AuthResponse,
+  type LoginRequest,
+  type SignupRequest,
+} from './schemas/auth.js';
+
+export {
+  meResponseSchema,
+  mePatchSchema,
+  workspaceMembershipSchema,
+  type MePatch,
+  type MeResponse,
+  type WorkspaceMembership,
+} from './schemas/me.js';
