@@ -41,7 +41,9 @@ export async function buildApp(env: Env): Promise<FastifyInstance> {
       const candidate = Array.isArray(header) ? header[0] : header;
       return candidate && candidate.length <= 200 ? candidate : randomUUID();
     },
-    disableRequestLogging: false,
+    // Request logging stays on: Fastify logs `incoming request` / `request
+    // completed` by default. The `disableRequestLogging` option is deprecated in
+    // Fastify 5 and removed in Fastify 6, so the default is relied on instead.
     trustProxy: true,
   }).withTypeProvider<ZodTypeProvider>();
 
