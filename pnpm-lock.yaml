@@ -121,6 +121,9 @@ importers:
 
   flowboard-web:
     dependencies:
+      '@flowboard/shared':
+        specifier: workspace:*
+        version: link:../flowboard-shared
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
