@@ -206,6 +206,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build @flowboard/shared
+        # flowboard-web imports @flowboard/shared's package.json `exports`,
+        # which resolve to dist/ (TAS-51): Vite's dev server fails to
+        # resolve the package until it is built, same as the `lint` job.
+        run: pnpm --filter ./flowboard-shared run build
       - name: Install Playwright browsers
         run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium
       - run: pnpm test:e2e
