@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+.worktrees
+
+# Management inputs are read-only (STANDARDS §5) and the engineering documents
+# alongside them are reviewed prose, not formatted source.
+docs
+flowboard-api/drizzle/meta
