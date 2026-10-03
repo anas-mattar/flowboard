@@ -1,0 +1,4 @@
+packages:
+  - flowboard-shared
+  - flowboard-api
+  - flowboard-web
