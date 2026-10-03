@@ -1,6 +1,6 @@
 **Backlog item:** FB-01 Data model and migrations
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Backend (`flowboard-api` Drizzle schema, migrations, seed; `flowboard-shared` entity schemas, position maths, constants)
 **Reviewer:** FlowBoard QA
 **Increment:** MVP-1
@@ -147,4 +147,4 @@ No routes. The role enums are defined here and the authorisation module that rea
 
 ### 12. Open questions
 
-None requiring Anas. Engineering decisions CL-E14 and CL-E19 are confirmed by accepting this specification set.
+None. Engineering decisions CL-E14 and CL-E19 were confirmed by Anas's acceptance of this specification set on 3 October 2026 (TAS-10).

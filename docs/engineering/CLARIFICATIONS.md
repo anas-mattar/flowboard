@@ -49,6 +49,18 @@ These readings were presented to Anas alongside the decisions as "answers that o
 | **CL-A6** | Archive retention | B-06, C-13 (30 days); FS §11 Q5; TAS-7 §2.17 | 30 days, held as one configurable constant. | A single constant in `flowboard-shared`; the purge job and the restore view read it. |
 | **CL-A7** | Default lists and WIP | B-02 (To Do, Doing, Done); PT (Doing has WIP 3); TAS-7 §2.18 | New boards get To Do, Doing (WIP limit 3) and Done. | Board creation seeds three lists with `wip_limit = 3` on Doing. Showcases the BM §2.3 flow-discipline differentiator on the first board. |
 
+### 2.1 Recorded answers from the MVP-1 specification acceptance (3 October 2026, TAS-10)
+
+Anas accepted the FB-00 to FB-04 specifications on the TAS-10 confirmation card on 3 October 2026, after FlowBoard QA's independent review (TAS-12). The acceptance decided the five open assumptions below, each as recommended, and confirmed the engineering decisions CL-E9 to CL-E21 in §3.1.
+
+| ID | Topic | Resolves | Recorded answer | Engineering consequence |
+|---|---|---|---|---|
+| **CL-A8** | Email verification in MVP | CL-O1; CL-E5; BM §1 two-minute metric; FB-02 §12 | No email verification before a user can create boards in MVP. Verification is added at launch readiness (FB-19) before public launch. | Signup is one screen and signs the user in immediately. Until FB-19, invitations are link-based (CL-D6), so unverified addresses are never emailed. |
+| **CL-A9** | Workspace admin role | CL-O6; FS §6; CL-D7; CL-E12; FB-02 §12 | The user who creates the workspace at signup is its workspace admin and the only one in MVP. Additional admins are managed in the v2.0 admin console. | `workspace_member.role = 'admin'` for the creator, written in the signup transaction. No UI to change workspace roles in MVP. |
+| **CL-A10** | Visual design | CL-O2; PT `:root` and `[data-theme="dark"]` tokens; FB-00 §12; FB-03 §12 | The prototype's design tokens (colours, spacing, radii, typography, light and dark palettes) are the approved visual design for v1.0. | Frontend copies PT tokens unchanged into CSS custom properties in FB-00; components use only those variables so a later design pass replaces values, not components. |
+| **CL-A11** | Board menu wording | CL-O7; B-06; CL-A2; CL-E16; FB-04 §12 | MVP-1 offers one board menu item, "Archive board", behind a confirmation dialog. No separately worded "Delete" action. | One string key in the message catalogue; changing the wording later needs no API or data change. |
+| **CL-A12** | Default board colour | CL-O8; B-01; CL-E15; FB-04 §12 | A new board takes the next colour of the five-colour PT palette, cycling by the number of boards ever created in the workspace. No recolour control in MVP-1; the API accepts `color`. | One function in `flowboard-shared`; a colour picker can be added as a small FB-04 follow-up without data changes. |
+
 ---
 
 ## 3. Engineering readings adopted in the approved plan
@@ -68,7 +80,7 @@ The following resolutions come from the TAS-7 conflict table (§2) and were appr
 
 ### 3.1 Engineering decisions for the MVP-1 specifications (3 October 2026, TAS-10)
 
-These decisions were needed to write the FB-00 to FB-04 specifications. They are engineering choices inside the scope Anas approved (CL-D1, CL-D7, CL-D9, CL-E5), not business decisions. They become binding when Anas accepts the specifications on Paperclip issue TAS-10; Anas may object to any of them there. Each cites the specification that depends on it.
+These decisions were needed to write the FB-00 to FB-04 specifications. They are engineering choices inside the scope Anas approved (CL-D1, CL-D7, CL-D9, CL-E5), not business decisions. They became binding on 3 October 2026 when Anas accepted the specifications on Paperclip issue TAS-10 (see §2.1); a later change needs a superseding entry per §5. Each cites the specification that depends on it.
 
 | ID | Topic | Resolves | Decision | Consequence | Spec |
 |---|---|---|---|---|---|
@@ -90,18 +102,18 @@ These decisions were needed to write the FB-00 to FB-04 specifications. They are
 
 ## 4. Open engineering assumptions
 
-These are assumptions engineering is working under that have **not** been put to Anas. A task that depends on one must cite it, and the assumption must be moved to §1 or §2 once answered.
+These are assumptions engineering is working under that have **not** been put to Anas. A task that depends on one must cite it, and the assumption must be moved to §1 or §2 once answered. Rows marked "Answered" are kept for traceability; the binding text is the CL-A entry they point to. CL-O3, CL-O4 and CL-O5 remain open.
 
 | ID | Assumption | Why it matters | Default until answered | Owner of the question |
 |---|---|---|---|---|
-| **CL-O1** | Email verification is not required before a user can create boards in MVP. | Protects time-to-first-board (BM §1) but allows unverified addresses in invitations. Public launch needs verification (FB-19). | No verification in MVP; verification is added at launch readiness. | FlowBoard Lead, to raise with the FB-02 specification. |
-| **CL-O2** | The prototype's visual design tokens (colours, spacing, typography, light and dark palettes) are the approved visual design for v1.0. | Frontend tasks copy tokens from PT into CSS variables. A separate design pass would change every screen. | Use PT tokens unchanged. | FlowBoard Lead, to confirm with the FB-03 specification. |
+| **CL-O1** | Email verification is not required before a user can create boards in MVP. | Protects time-to-first-board (BM §1) but allows unverified addresses in invitations. Public launch needs verification (FB-19). | No verification in MVP; verification is added at launch readiness. | Answered 3 October 2026 (TAS-10): recorded as **CL-A8**. |
+| **CL-O2** | The prototype's visual design tokens (colours, spacing, typography, light and dark palettes) are the approved visual design for v1.0. | Frontend tasks copy tokens from PT into CSS variables. A separate design pass would change every screen. | Use PT tokens unchanged. | Answered 3 October 2026 (TAS-10): recorded as **CL-A10**. |
 | **CL-O3** | The `smoke.py` Playwright test referenced in FS §9 does not exist in the repository and will not be supplied. | QA writes its own end-to-end suite from the FS story IDs. | Treat as absent. | FlowBoard QA, once the agent exists (CL-D10). |
 | **CL-O4** | Card copy (C-12) copies labels, members, description, checklist and due date, but not comments or activity ("activity resets"). | C-12 says activity resets but does not list which fields copy. | Copy all card fields and child rows except comments and activity. | FlowBoard Lead, to confirm with the FB-06 specification. |
 | **CL-O5** | Sorting a list by due date (L-05) is a one-off reorder that rewrites positions, not a persistent sort mode. | A persistent mode would conflict with drag ordering (C-02). | One-off reorder, written as position updates with one `card.moved` event per card that changed position. | FlowBoard Lead, to confirm with the FB-05 specification. |
-| **CL-O6** | "Workspace admin" in FS §6 is the role of the user who created the workspace at signup; additional workspace admins are managed only in v2.0 (admin console). | FS §6 grants workspace admins board rights without defining how the role is assigned. | Creator is workspace admin; no UI to change it in MVP. | FlowBoard Lead, to confirm with the FB-09 specification. |
-| **CL-O7** | The MVP-1 board menu offers "Archive board" only; no separately worded "Delete" action (CL-E16, CL-A2, B-06). | User-facing copy. B-06 says "archive or delete"; CL-A2 makes them the same action, so one item avoids implying two outcomes. | One menu item "Archive board" behind a confirmation dialog. A "Delete" wording would be a one-string catalogue change. | FlowBoard Lead, put to Anas with the FB-04 specification (TAS-10). |
-| **CL-O8** | A new board's colour is the next colour of the five-colour PT palette, cycling by the number of boards ever created in the workspace (CL-E15). | A genuine design choice: FS and PT only establish that a board has a colour swatch (B-01) and show the palette. It decides the colour of every board a user creates; no recolour control ships in MVP-1. | Cycle through the PT palette; `PATCH /v1/boards/{id}` accepts `color` so a picker can be added later without data changes. | FlowBoard Lead, put to Anas with the FB-04 specification (TAS-10). |
+| **CL-O6** | "Workspace admin" in FS §6 is the role of the user who created the workspace at signup; additional workspace admins are managed only in v2.0 (admin console). | FS §6 grants workspace admins board rights without defining how the role is assigned. | Creator is workspace admin; no UI to change it in MVP. | Answered 3 October 2026 (TAS-10): recorded as **CL-A9**. |
+| **CL-O7** | The MVP-1 board menu offers "Archive board" only; no separately worded "Delete" action (CL-E16, CL-A2, B-06). | User-facing copy. B-06 says "archive or delete"; CL-A2 makes them the same action, so one item avoids implying two outcomes. | One menu item "Archive board" behind a confirmation dialog. A "Delete" wording would be a one-string catalogue change. | Answered 3 October 2026 (TAS-10): recorded as **CL-A11**. |
+| **CL-O8** | A new board's colour is the next colour of the five-colour PT palette, cycling by the number of boards ever created in the workspace (CL-E15). | A genuine design choice: FS and PT only establish that a board has a colour swatch (B-01) and show the palette. It decides the colour of every board a user creates; no recolour control ships in MVP-1. | Cycle through the PT palette; `PATCH /v1/boards/{id}` accepts `color` so a picker can be added later without data changes. | Answered 3 October 2026 (TAS-10): recorded as **CL-A12**. |
 
 ---
 

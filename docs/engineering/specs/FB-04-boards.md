@@ -1,6 +1,6 @@
 **Backlog item:** FB-04 Boards
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Backend (`flowboard-api` board routes, `flowboard-shared` board schemas), FlowBoard Frontend (`flowboard-web` sidebar board list, create board, board page, title, star, archive)
 **Reviewer:** FlowBoard QA; QA also owns the slice-level acceptance test (§10)
 **Increment:** MVP-1
@@ -204,9 +204,7 @@ Covered by `flowboard-api/test/boards.matrix.test.ts`, generated from this table
 
 ### 12. Open questions
 
-For Anas, answered with the TAS-10 acceptance card. The engineering decisions CL-E14 to CL-E18 and CL-E20 are confirmed by accepting this specification set; the two items below are user-facing choices inside those decisions and are listed separately so they are decided explicitly.
+None open. The engineering decisions CL-E14 to CL-E18 and CL-E20 were confirmed, and the two user-facing choices put to Anas with this specification were accepted, on 3 October 2026 (TAS-10 confirmation card). They are recorded in `CLARIFICATIONS.md` §2.1:
 
-1. **CL-O7 Board menu wording: "Archive board" only, no separate "Delete".** FS §7 lists no `DELETE /v1/boards/{id}` and CL-A2 makes delete and archive the same action, so MVP-1 exposes one menu item, "Archive board", behind a confirmation dialog (CL-E16). Recommendation: accept. If Anas prefers a visible "Delete" wording that behaves as archive, it is a one-string change in the message catalogue with no API or data impact, and can be made at any time.
-2. **CL-O8 Default board colour.** FS and PT only say a board has a colour swatch (B-01) and show a five-colour palette. A new board takes the next palette colour, cycling by the number of boards ever created in the workspace (CL-E15); no recolour control ships in MVP-1 because FS §4 defines none, though the API accepts `color`. Recommendation: accept as the MVP-1 default. The rule is one function in `flowboard-shared`; if Anas wants a colour picker on creation or in the board menu, it is a small FB-04 follow-up, not a data change.
-
-If accepted, CL-O7 and CL-O8 move to `CLARIFICATIONS.md` §2 as recorded answers and this section is replaced by those references.
+- CL-O7 (one "Archive board" menu item behind a confirmation dialog, no separate "Delete" wording) is recorded as **CL-A11**.
+- CL-O8 (a new board takes the next colour of the five-colour PT palette, cycling by boards ever created in the workspace) is recorded as **CL-A12**.

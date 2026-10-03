@@ -1,6 +1,6 @@
 **Backlog item:** FB-02 Accounts and workspace bootstrap
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Backend (`flowboard-api` auth and me routes, `flowboard-shared` request/response schemas), FlowBoard Frontend (`flowboard-web` signup, login, logout and session handling), FlowBoard QA (`flowboard-web/e2e/FB-02-accounts.spec.ts` Playwright and axe suite, §10, in a separate task after the Frontend task; see the end-to-end ownership rule in FB-00)
 **Reviewer:** FlowBoard QA
 **Increment:** MVP-1
@@ -184,9 +184,7 @@ Covered by `flowboard-api/test/auth.matrix.test.ts` (every route × authenticate
 
 ### 12. Open questions
 
-For Anas, answered by accepting or rejecting this specification set (one card on TAS-10):
+None open. Both questions put to Anas with this specification were accepted on 3 October 2026 (TAS-10 confirmation card) and are recorded in `CLARIFICATIONS.md` §2.1:
 
-1. **CL-O1 No email verification in MVP.** Recommendation: accept. It keeps signup to one screen (BM §1). Verification is added in FB-19 before public launch, and unverified users cannot send email invitations until then (CL-D6 uses links).
-2. **CL-O6 The signup user is the workspace admin and the only one in MVP.** Recommendation: accept. FS §6 needs the role to exist; the admin console that manages it is v2.0.
-
-If both are accepted, they move to `CLARIFICATIONS.md` §2 as CL-A8 and CL-A9 and this section is replaced by those references.
+- CL-O1 (no email verification in MVP) is recorded as **CL-A8**.
+- CL-O6 (the signup user is the workspace admin) is recorded as **CL-A9**.

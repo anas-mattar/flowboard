@@ -1,6 +1,6 @@
 **Backlog item:** FB-03 App shell
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Frontend (`flowboard-web` components, routing, theme, primitives and unit tests), FlowBoard QA (`flowboard-web/e2e/FB-03-shell.spec.ts` Playwright and axe suite, §10, in a separate task after the Frontend task; see the end-to-end ownership rule in FB-00)
 **Reviewer:** FlowBoard QA
 **Increment:** MVP-1
@@ -128,6 +128,4 @@ Client-side route guard only (redirects); the server enforces authentication on 
 
 ### 12. Open questions
 
-For Anas, answered with the TAS-10 acceptance card:
-
-1. **CL-O2 The prototype's design tokens are the approved visual design for v1.0.** Recommendation: accept. The tokens already cover light and dark palettes, spacing, radii and typography; a separate design pass can replace the variables later without touching components.
+None open. CL-O2 (the prototype's design tokens are the approved visual design for v1.0) was accepted by Anas on 3 October 2026 (TAS-10 confirmation card) and is recorded as **CL-A10** in `CLARIFICATIONS.md` §2.1.

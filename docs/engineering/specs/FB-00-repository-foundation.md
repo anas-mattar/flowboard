@@ -1,6 +1,6 @@
 **Backlog item:** FB-00 Repository foundation (tooling)
-**Status:** Ready for approval
-**Approved by:** pending, Paperclip issue TAS-10
+**Status:** Approved
+**Approved by:** Anas, 3 October 2026 (Paperclip issue TAS-10, confirmation card accepted; independent review TAS-12)
 **Owner(s):** FlowBoard Backend (root tooling, `flowboard-shared`, `flowboard-api`, CI, Docker Compose, README), FlowBoard Frontend (`flowboard-web` skeleton, Playwright and axe harness configuration, and the single FB-00 smoke test)
 **Reviewer:** FlowBoard QA (independent review of each pull request)
 **End-to-end ownership rule (applies to FB-00 to FB-04):** FlowBoard Frontend sets up the Playwright and axe harness and writes only the FB-00 smoke test, because the harness is part of the `flowboard-web` skeleton. From FB-02 onward FlowBoard QA writes every Playwright and axe suite under `flowboard-web/e2e/` (FB-02, FB-03, FB-04 and the MVP-1 slice test) in its own tasks, sequenced so that QA and Frontend never write `flowboard-web` at the same time.
@@ -122,4 +122,4 @@ Required before review:
 
 ### 12. Open questions
 
-None requiring Anas. CL-O2 (PT tokens as the approved visual design) is confirmed by accepting this specification set; it is restated in FB-03 §12 where it matters.
+None. CL-O2 (PT tokens as the approved visual design) was accepted by Anas on 3 October 2026 with this specification set and is recorded as **CL-A10** in `CLARIFICATIONS.md` §2.1.
