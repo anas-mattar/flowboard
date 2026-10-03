@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "pnpm --parallel --recursive --if-present run dev",
     "build": "pnpm --recursive --if-present run build",
-    "lint": "eslint . --max-warnings 0 && prettier --check .",
+    "lint": "pnpm --filter ./flowboard-shared run build && eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "pnpm --recursive --if-present run typecheck",
     "test": "pnpm --recursive --if-present run test",

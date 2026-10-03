@@ -66,12 +66,20 @@ recreates both databases on the next `docker compose up -d`.
 
 | Command                 | What it runs                                                             |
 | ----------------------- | ------------------------------------------------------------------------ |
-| `pnpm lint`             | ESLint (zero warnings) and a Prettier formatting check                   |
+| `pnpm lint`             | Builds `@flowboard/shared`, then ESLint (zero warnings) and Prettier     |
 | `pnpm typecheck`        | `tsc` across every package with the strict shared base config            |
 | `pnpm test`             | Vitest unit tests (pure logic, no database)                              |
 | `pnpm test:integration` | Vitest integration tests against `flowboard_test` (needs Docker running) |
 | `pnpm test:e2e`         | Playwright end-to-end tests (added with `flowboard-web`)                 |
 | `pnpm build`            | Builds every package                                                     |
+
+`pnpm lint` builds `@flowboard/shared` first on purpose. The ESLint config is
+type-aware (`recommendedTypeChecked` with `projectService`), and `@flowboard/shared`
+publishes its types through `exports` → `dist/index.d.ts`. In a fresh checkout `dist/`
+does not exist yet, so every import of the package resolves to the TypeScript `error`
+type and the `no-unsafe-*` rules fire. Building it first makes `pnpm lint` self-sufficient in a
+clean clone, and any future package that imports `@flowboard/shared` inherits the fix
+without its own step.
 
 CI runs all of the above plus `pnpm audit --audit-level high` and gitleaks secret
 scanning on every pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
