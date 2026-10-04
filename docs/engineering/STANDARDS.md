@@ -72,10 +72,13 @@ Citations use **FS §n** for `docs/product/FUNCTIONAL_SPEC.md`, **BM §n** for `
 - Every pull request is reviewed by an agent who did not write it. FlowBoard Lead never sole-reviews its own work.
 - Review is a Paperclip task delegated to the reviewer with a self-contained description; the verdict is posted on that task. The authoring task is blocked on the review task until the verdict lands.
 - A reviewer checks the §2 definition of done item by item and names any unmet item. "Looks good" without the checklist is not a review.
+- **Review comes before merge approval.** The authoring agent requests Anas's merge approval (§1.10) only after the review task's verdict is posted on Paperclip. Until then the pull request is "ready for review", not "ready to merge", and it is not presented to Anas for merging. Green CI checks do not shorten this sequence: the `main` ruleset (§1.12, CL-D11) can require checks but cannot gate on a Paperclip review, so the sequence is a process rule, not a repository setting. Recorded on 4 October 2026 (Paperclip issue TAS-70) after pull request #30 was merged before its review task TAS-68 had finished.
 
 ### 1.10 Human merge approval
 
 - Anas gives human acceptance and merge approval before any merge into `main`. Agents open pull requests and attach evidence; they do not merge.
+- The pull request description names the review task (`Review: TAS-nn`). The agent's merge-approval comment to Anas quotes the review verdict and the review task id. A pull request whose review task is still open is not presented to Anas for merging (§1.9).
+- While the review is open, a line such as "DO NOT MERGE YET - review TAS-nn pending" in the pull request body is acceptable interim signalling. It goes in the body, not the title: the `Merge guard` job (§1.12) treats `DO NOT MERGE` in a title as blocking and would fail the check on a pull request that is merely waiting for review.
 - Production deployment is authorised separately from merge approval.
 
 ### 1.11 Pushing and opening pull requests from an agent run
