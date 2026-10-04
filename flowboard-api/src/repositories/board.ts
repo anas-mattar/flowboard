@@ -177,6 +177,13 @@ export async function listBoards(
     .select({
       board: boardTable,
       starred: sql<boolean>`${boardStarTable.boardId} is not null`,
+      // The cursor must carry the *database's* fold, not JavaScript's. Postgres
+      // `lower()` under the `C` locale folds ASCII only, while
+      // `String#toLowerCase` folds the whole of Unicode, so re-folding here
+      // would make the next page's keyset predicate compare `évaluation`
+      // against a boundary the `ORDER BY` never produced — skipping or
+      // repeating a row (FS §7).
+      lowerName: sql<string>`lower(${boardTable.name})`,
       cardCount: sql<number>`(
         select count(*)::int
         from ${listTable}
@@ -231,7 +238,7 @@ export async function listBoards(
       hasMore && last !== undefined
         ? encodeBoardCursor({
             starred: last.starred,
-            lowerName: last.board.name.toLowerCase(),
+            lowerName: last.lowerName,
             id: last.board.id,
           })
         : null,
@@ -304,6 +311,15 @@ export async function createBoard(
   hooks: { onAfterBoardInsert?: () => Promise<void> | void } = {},
 ): Promise<CreatedBoard> {
   return db.transaction(async (tx) => {
+    // Serialise colour assignment per workspace. Without this, two concurrent
+    // `POST /v1/boards` read the same count and pick the same colour, which is
+    // exactly what CL-A12 asks the cycle to avoid. The lock is transaction
+    // scoped, so it is released on commit or rollback with no explicit unlock,
+    // and it is keyed on the workspace, so creates in other workspaces never
+    // queue behind it. Cosmetic contention only: the critical section is the
+    // count plus the insert.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.workspaceId}))`);
+
     // CL-A12: cycle the palette by boards *ever* created in the workspace, so
     // archiving one does not make the next board reuse a neighbour's colour.
     const [existing] = await tx

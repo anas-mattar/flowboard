@@ -270,6 +270,50 @@ describe('GET /v1/boards pagination (AC 3)', () => {
     expect(second.items.map((item) => item.name)).toEqual(['bravo', 'charlie']);
   });
 
+  it('walks non-ASCII cased names exactly once across a page boundary (FS §7, FS §4.1)', async () => {
+    // The database folds `lower(name)` in the `C` locale, which leaves `É` and
+    // `Ü` untouched, so under that fold the ASCII names all sort first and
+    // `Évaluation` (UTF-8 C3 89) precedes `Übung` (C3 9C). Folding the cursor
+    // in JavaScript instead would emit `évaluation` (C3 A9), which sorts
+    // *after* `Übung` and makes the next page's keyset skip it. The É board
+    // therefore has to land on a page boundary for this to prove anything.
+    const unicodeNames = ['Évaluation', 'Übung', 'zulu'];
+    for (const name of unicodeNames) await createBoardAs(app, owner, name);
+
+    // Ground truth is the single-page listing: whatever collation the server
+    // is configured with, paging must reproduce that exact sequence. Hard-coding
+    // the `C`-locale order here would make the test assert the deployment's
+    // collation rather than the cursor's agreement with it.
+    const expected = (await list(owner, '?limit=50')).items.map((item) => item.name);
+
+    expect(expected).toHaveLength(names.length + unicodeNames.length);
+    expect(new Set(expected)).toEqual(new Set([...names, ...unicodeNames]));
+
+    // Walk with limit=2 so the third page starts from the cursor built on
+    // `Évaluation`, and again with limit=1 so every name in turn is a boundary.
+    for (const limit of [1, 2]) {
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+
+      do {
+        const query: string =
+          cursor === null
+            ? `?limit=${limit}`
+            : `?limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
+        const page: ListResponse = await list(owner, query);
+
+        seen.push(...page.items.map((item) => item.name));
+        cursor = page.nextCursor;
+        pages += 1;
+
+        expect(pages, `limit=${limit} did not terminate`).toBeLessThan(20);
+      } while (cursor !== null);
+
+      expect(seen, `limit=${limit}`).toEqual(expected);
+    }
+  });
+
   it('rejects a limit above 200, below 1, or not a number, with 422', async () => {
     for (const limit of ['201', '0', 'many']) {
       const response = await app.inject({
