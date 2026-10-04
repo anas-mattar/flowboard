@@ -250,6 +250,11 @@ jobs:
       #   SESSION_COOKIE_SECURE `false`: Playwright drives the app over plain
       #                         http, so a `Secure` cookie would never be sent back.
       #   LOG_LEVEL             `info`; the API log is uploaded as an artifact on failure.
+      #   RATE_LIMIT_DISABLED   `true`: FB-02/FB-03 (TAS-21) sign up and log in
+      #                         many times per run across three browser
+      #                         projects; FB-02's own rate-limit behaviour is
+      #                         covered by `flowboard-api/test/auth.ratelimit.test.ts`,
+      #                         not this job (FB-02 spec §9).
       DATABASE_URL: postgres://flowboard:flowboard@localhost:5432/flowboard
       HOST: '::'
       PORT: '3000'
@@ -257,6 +262,7 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
       SESSION_COOKIE_SECURE: 'false'
       LOG_LEVEL: info
+      RATE_LIMIT_DISABLED: 'true'
       API_LOG: ${{ github.workspace }}/flowboard-api-ci.log
     steps:
       - uses: actions/checkout@v4
@@ -282,7 +288,9 @@ jobs:
         run: pnpm db:seed
 
       - name: Install Playwright browsers
-        run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium
+        # FB-02/FB-03 (TAS-21) suites run on all three projects (FB-03 spec
+        # acceptance criterion 11); FB-00's own smoke spec only ran Chromium.
+        run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium firefox webkit
 
       - name: Start the built API
         run: |
