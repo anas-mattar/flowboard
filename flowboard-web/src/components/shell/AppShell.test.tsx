@@ -44,3 +44,16 @@ describe('AppShell sidebar collapse (FS X-04, acceptance criterion 3)', () => {
     });
   });
 });
+
+describe('AppShell initial focus (FS §10 tab order, TAS-73)', () => {
+  it('does not steal focus from the skip link on first mount', async () => {
+    const me = makeMeResponse();
+    mockFetchSequence(jsonResponse(200, me));
+
+    renderApp('/');
+    const heading = await screen.findByRole('heading', { name: messages.shell.boards });
+
+    expect(heading).not.toHaveFocus();
+    expect(document.activeElement).toBe(document.body);
+  });
+});

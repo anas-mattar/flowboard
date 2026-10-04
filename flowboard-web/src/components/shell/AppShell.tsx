@@ -32,9 +32,14 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
   const isNarrow = useNarrowViewport(MOBILE_BREAKPOINT_PX);
   const theme = useTheme(session.data?.user.theme);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const isFirstRender = useRef(true);
   const pathname = useRouterState({ select: (routerState) => routerState.location.pathname });
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     headingRef.current?.focus();
   }, [pathname]);
 
