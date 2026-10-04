@@ -32,7 +32,7 @@ describe('login route', () => {
     renderApp('/login');
 
     await waitFor(() => {
-      expect(screen.getByText(messages.app.signedInAs(me.user.displayName))).toBeInTheDocument();
+      expect(screen.getByText(me.user.displayName)).toBeInTheDocument();
     });
   });
 
@@ -105,7 +105,7 @@ describe('login route', () => {
     fireEvent.click(screen.getByRole('button', { name: messages.auth.login.submit }));
 
     await waitFor(() => {
-      expect(screen.getByText(messages.app.signedInAs(me.user.displayName))).toBeInTheDocument();
+      expect(screen.getByText(me.user.displayName)).toBeInTheDocument();
     });
   });
 
@@ -121,7 +121,35 @@ describe('login route', () => {
     fireEvent.submit(passwordInput.closest('form') as HTMLFormElement);
 
     await waitFor(() => {
-      expect(screen.getByText(messages.app.signedInAs(me.user.displayName))).toBeInTheDocument();
+      expect(screen.getByText(me.user.displayName)).toBeInTheDocument();
+    });
+  });
+
+  it('returns to the ?next= path after a successful login (FB-03 spec acceptance criterion 5)', async () => {
+    const auth = makeAuthResponse();
+    const me = makeMeResponse({ user: auth.user });
+    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+
+    const { router } = renderApp('/login?next=%2Fboards%2Fabc');
+    await fillLoginForm('ada@example.com', 'a-very-long-password');
+    fireEvent.click(screen.getByRole('button', { name: messages.auth.login.submit }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/boards/abc');
+    });
+  });
+
+  it('falls back to / for an unsafe ?next= value (open-redirect guard)', async () => {
+    const auth = makeAuthResponse();
+    const me = makeMeResponse({ user: auth.user });
+    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+
+    const { router } = renderApp('/login?next=%2F%2Fevil.example');
+    await fillLoginForm('ada@example.com', 'a-very-long-password');
+    fireEvent.click(screen.getByRole('button', { name: messages.auth.login.submit }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
     });
   });
 });

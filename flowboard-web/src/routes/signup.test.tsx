@@ -71,7 +71,7 @@ describe('signup route', () => {
     fireEvent.click(screen.getByRole('button', { name: messages.auth.signup.submit }));
 
     await waitFor(() => {
-      expect(screen.getByText(messages.app.signedInAs(me.user.displayName))).toBeInTheDocument();
+      expect(screen.getByText(me.user.displayName)).toBeInTheDocument();
     });
   });
 

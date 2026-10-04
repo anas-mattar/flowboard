@@ -5,9 +5,39 @@
  * only place text appears. Keys match the catalogue in the FB-02 spec §5.
  */
 export const messages = {
-  appName: 'FlowBoard',
   app: {
+    name: 'FlowBoard',
+    skipToContent: 'Skip to content',
     signedInAs: (name: string): string => `Signed in as ${name}`,
+  },
+  shell: {
+    toggleSidebar: 'Toggle sidebar',
+    boards: 'Boards',
+    theme: {
+      label: 'Theme',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+    },
+    comingSoon: 'Coming soon',
+    search: 'Search',
+    filter: 'Filter',
+    members: 'Board members',
+    invite: 'Invite',
+    userMenu: 'User menu',
+    noBoardsTitle: 'No boards yet',
+    noBoardsBody: 'Create your first board.',
+  },
+  role: {
+    workspaceAdmin: 'Workspace admin',
+    member: 'Member',
+  },
+  dialog: {
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+  },
+  toast: {
+    dismiss: 'Dismiss',
   },
   auth: {
     signup: {
