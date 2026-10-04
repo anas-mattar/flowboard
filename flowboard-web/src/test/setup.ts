@@ -2,6 +2,34 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
+// Node 22's experimental global `localStorage` shadows jsdom's own
+// implementation and throws without a `--localstorage-file` flag; the theme
+// and sidebar-collapse persistence (CL-E13) need a working synchronous store.
+if (!window.localStorage || typeof window.localStorage.getItem !== 'function') {
+  const store = new Map<string, string>();
+  const memoryLocalStorage: Storage = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => {
+      store.set(key, String(value));
+    },
+    removeItem: (key) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (index) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  Object.defineProperty(window, 'localStorage', {
+    value: memoryLocalStorage,
+    writable: true,
+    configurable: true,
+  });
+}
+
 // jsdom does not implement matchMedia; `theme.ts` calls it for every
 // signed-in session (`applyTheme`) and on initial load (`applyInitialTheme`).
 if (!window.matchMedia) {

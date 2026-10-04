@@ -25,6 +25,7 @@ const FIELD_ORDER = ['email', 'password'] as const;
 function LoginPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { next } = loginRoute.useSearch();
   const [values, setValues] = useState<LoginValues>({ email: '', password: '' });
   const [errors, setErrors] = useState<LoginFieldErrors>({});
   const [serverError, setServerError] = useState<string | undefined>(undefined);
@@ -89,7 +90,7 @@ function LoginPage() {
     try {
       await login(parsed.data);
       queryClient.removeQueries({ queryKey: meQueryKey });
-      await navigate({ to: '/' });
+      await navigate({ href: sanitizeNext(next) });
     } catch (error) {
       setServerError(describeAuthError(error));
       setSubmitting(false);
@@ -148,9 +149,29 @@ function LoginPage() {
   );
 }
 
+interface LoginSearch {
+  next?: string;
+}
+
+/**
+ * Only a same-origin relative path is a safe redirect target (no open
+ * redirect via `?next=https://evil.example`); anything else falls back to
+ * `/` (FB-03 spec §3, acceptance criterion 5).
+ */
+function sanitizeNext(next: string | undefined): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+    return '/';
+  }
+  return next;
+}
+
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
+  validateSearch: (search: Record<string, unknown>): LoginSearch => {
+    const next = search['next'];
+    return typeof next === 'string' ? { next } : {};
+  },
   beforeLoad: async ({ context }) => {
     const hasSession = await context.queryClient
       .ensureQueryData(meQueryOptions())

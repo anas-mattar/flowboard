@@ -1,0 +1,37 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "property-disallowed-list": [
+      [
+        "left",
+        "right",
+        "margin-left",
+        "margin-right",
+        "padding-left",
+        "padding-right",
+        "border-left",
+        "border-right",
+        "border-left-width",
+        "border-right-width",
+        "border-left-color",
+        "border-right-color",
+        "border-left-style",
+        "border-right-style",
+        "border-top-left-radius",
+        "border-top-right-radius",
+        "border-bottom-left-radius",
+        "border-bottom-right-radius"
+      ],
+      {
+        "message": "Use logical properties (margin-inline-start, inset-inline-end, border-start-start-radius, ...) instead of physical left/right properties (CL-E7, FB-03 spec acceptance criterion 10)."
+      }
+    ],
+    "declaration-property-value-disallowed-list": {
+      "text-align": ["left", "right"],
+      "float": ["left", "right"],
+      "clear": ["left", "right"]
+    }
+  }
+}

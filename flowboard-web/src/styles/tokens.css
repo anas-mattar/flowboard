@@ -5,7 +5,7 @@
  */
 :root {
   --color-bg: #f1f2f6;
-  --color-panel: #ffffff;
+  --color-panel: #fff;
   --color-panel-2: #f7f8fa;
   --color-sidebar: #1f2b45;
   --color-sidebar-2: #28365a;
@@ -14,11 +14,12 @@
   --color-line: #e2e5ea;
   --color-accent: #3d6df0;
   --color-accent-2: #2f57c4;
+
   /* Darker than the PT reference red so error text clears WCAG AA 4.5:1
      against --color-panel and --color-panel-2 (FB-02 spec §4 item 14). */
   --color-danger: #b42318;
-  --shadow: 0 1px 2px rgba(9, 30, 66, 0.16), 0 0 1px rgba(9, 30, 66, 0.12);
-  --shadow-lg: 0 8px 24px rgba(9, 30, 66, 0.22);
+  --shadow: 0 1px 2px rgb(9 30 66 / 16%), 0 0 1px rgb(9 30 66 / 12%);
+  --shadow-lg: 0 8px 24px rgb(9 30 66 / 22%);
   --radius: 10px;
 }
 
@@ -33,11 +34,12 @@
   --color-line: #2a3448;
   --color-accent: #5b86ff;
   --color-accent-2: #3d6df0;
+
   /* Lighter than the light-theme red so error text clears WCAG AA 4.5:1
      against the dark --color-panel and --color-panel-2. */
   --color-danger: #ff6b6b;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 50%);
 }
 
 *,
@@ -109,10 +111,11 @@ body {
   padding-inline: 16px;
   border: none;
   border-radius: var(--radius);
+
   /* --color-accent-2 (not --color-accent) so white text clears WCAG AA
      4.5:1 in both themes; the dark theme's --color-accent is too light. */
   background-color: var(--color-accent-2);
-  color: #ffffff;
+  color: #fff;
   font-weight: 600;
   cursor: pointer;
 }

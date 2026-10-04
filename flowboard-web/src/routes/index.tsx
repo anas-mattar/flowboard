@@ -1,46 +1,20 @@
-import { createRoute, redirect } from '@tanstack/react-router';
-import { meQueryOptions, useSession } from '../hooks/useSession';
-import { useSignOut } from '../hooks/useSignOut';
+import { createRoute } from '@tanstack/react-router';
+import { EmptyState } from '../components/primitives/EmptyState';
 import { messages } from '../i18n/messages';
-import { rootRoute } from './root';
+import { authenticatedLayoutRoute } from './authenticated';
 
 /**
- * Temporary placeholder (FB-02 spec §3): replaced by the real app shell in
- * FB-03. It exists only to prove the signed-in state and give `Sign out`
- * somewhere to live until the sidebar footer does.
+ * Board list placeholder (FB-03 spec §3: "FB-03 ships the route with a
+ * placeholder outlet"). FB-04 replaces this with the real board list and
+ * "Create board" action; the `EmptyState` primitive ships here so FB-04 can
+ * reuse it unchanged (BM §5).
  */
 function IndexPage() {
-  const session = useSession();
-  const signOut = useSignOut();
-
-  if (!session.data) {
-    return null;
-  }
-
-  return (
-    <main className="app-shell">
-      <p className="app-shell__title">{messages.app.signedInAs(session.data.user.displayName)}</p>
-      <button
-        type="button"
-        onClick={() => {
-          void signOut();
-        }}
-      >
-        {messages.auth.signOut}
-      </button>
-    </main>
-  );
+  return <EmptyState heading={messages.shell.noBoardsTitle} body={messages.shell.noBoardsBody} />;
 }
 
 export const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedLayoutRoute,
   path: '/',
-  beforeLoad: async ({ context }) => {
-    try {
-      await context.queryClient.ensureQueryData(meQueryOptions());
-    } catch {
-      redirect({ to: '/login', throw: true });
-    }
-  },
   component: IndexPage,
 });
