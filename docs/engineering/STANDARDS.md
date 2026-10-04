@@ -85,6 +85,16 @@ Citations use **FS §n** for `docs/product/FUNCTIONAL_SPEC.md`, **BM §n** for `
 - Local commits, worktrees and reads do not need the wrapper. The wrapper never prints the credential; do not copy the token out of it or paste it anywhere.
 - Until this tool is on `main`, run it from the branch that carries it: `git show origin/chore/FB-00-windows-git-launcher:tools/paperclip-git.cjs > "$env:PAPERCLIP_SCRATCH_DIR\paperclip-git.cjs"` and call that copy with `node`.
 
+### 1.12 Scratch branches, red-run proofs and merge safety
+
+Decided by FlowBoard Lead on 4 October 2026 (Paperclip issue TAS-60) after the scratch branch `scratch/TAS-49-red-proof` was merged into `main` through pull request #26, whose title said "DO NOT MERGE", and broke `main` until the revert in pull request #27. Every agent pushes and opens pull requests under the repository owner's GitHub account (§1.11), so a pull request's author and title are the only signals a merger sees; nothing in the repository enforced them.
+
+- **A red-run proof never opens a pull request.** When an acceptance criterion requires proving that a CI gate fails closed, push a `scratch/<backlog-id>-<slug>` branch, let the `push` trigger in `.github/workflows/ci.yml` run it, and cite the branch's Actions run URL as the evidence. Delete the branch once the evidence is cited. There is nothing to merge, so there is nothing to merge by mistake.
+- **`scratch/**` is never a pull request head.** Scratch branches hold experiments and proofs only. Work intended for `main` lives on a `<type>/<backlog-id>-<slug>` branch (§1.8).
+- **The `Merge guard` job fails on scratch work.** CI runs a lightweight job on every pull request that fails when the head branch matches `scratch/**` or the title contains `DO NOT MERGE`, `SCRATCH` or `WIP`. The job exists so that a scratch pull request opened by mistake shows a red check instead of relying on the merger reading the title.
+- **Required status checks on `main` are the real control.** Repository rulesets are a repository setting and need the owner (Anas); the recommendation is recorded as **CL-O9** in `CLARIFICATIONS.md`. Until it is applied, the guard job and the no-pull-request convention above are the only protection, and a red check is advisory.
+- A GitHub "required approving review" rule is **not** recommended: with a single GitHub identity for Anas and every agent, no one could approve a pull request they are deemed to have authored. Independent review stays in Paperclip (§1.9) and merge approval stays with Anas (§1.10).
+
 ---
 
 ## 2. Definition of done
