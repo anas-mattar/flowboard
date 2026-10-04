@@ -193,9 +193,55 @@ jobs:
       - run: pnpm build
 
   playwright:
-    # FB-00 §4 acceptance criteria 6 (Playwright smoke part) and 7 (axe-core on `/`).
+    # FB-00 §4 acceptance criteria 6 (Playwright smoke part) and 7 (axe-core on `/`),
+    # run against the built API and a migrated + seeded database as the FB-00 spec
+    # §3 requires now that FB-01 exists (TAS-49). STANDARDS §4: end-to-end tests
+    # run against the real API and database, never mocks.
     name: Playwright smoke
     runs-on: ubuntu-latest
+    services:
+      # Deliberate copy of the `integration` job's service block. GitHub Actions
+      # supports neither YAML anchors nor `extends` for services, and a composite
+      # action cannot declare them either, so the two blocks must be changed
+      # together whenever the Postgres image or credentials move.
+      postgres:
+        image: postgres:16.10-alpine
+        env:
+          POSTGRES_DB: flowboard
+          POSTGRES_USER: flowboard
+          # Throwaway credential for an ephemeral CI container (STANDARDS §1.5, CL-E21).
+          POSTGRES_PASSWORD: flowboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flowboard -d flowboard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # Every variable this job sets, all throwaway CI values and no secrets
+      # (STANDARDS §1.5). The names and defaults come from
+      # `flowboard-api/src/config/env.ts`.
+      #
+      #   DATABASE_URL          the CI Postgres service above; migrated and seeded below.
+      #   HOST                  `::` binds dual-stack so the Vite proxy's
+      #                         `http://localhost:3000` target resolves whether
+      #                         `localhost` comes back as 127.0.0.1 or ::1.
+      #   PORT                  the port `flowboard-web/vite.config.ts` proxies `/v1` to.
+      #   WEB_ORIGIN            the single browser origin allowed to send a
+      #                         cookie-authenticated mutation (FB-02 §9, CL-E9).
+      #   CORS_ORIGIN           same origin, for the CORS pre-flight.
+      #   SESSION_COOKIE_SECURE `false`: Playwright drives the app over plain
+      #                         http, so a `Secure` cookie would never be sent back.
+      #   LOG_LEVEL             `info`; the API log is uploaded as an artifact on failure.
+      DATABASE_URL: postgres://flowboard:flowboard@localhost:5432/flowboard
+      HOST: '::'
+      PORT: '3000'
+      WEB_ORIGIN: http://localhost:5173
+      CORS_ORIGIN: http://localhost:5173
+      SESSION_COOKIE_SECURE: 'false'
+      LOG_LEVEL: info
+      API_LOG: ${{ github.workspace }}/flowboard-api-ci.log
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -206,20 +252,70 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build @flowboard/shared
-        # flowboard-web imports @flowboard/shared's package.json `exports`,
-        # which resolve to dist/ (TAS-51): Vite's dev server fails to
-        # resolve the package until it is built, same as the `lint` job.
-        run: pnpm --filter ./flowboard-shared run build
+
+      - name: Build every package
+        # Builds @flowboard/shared (flowboard-web resolves it through package
+        # `exports` to dist/, TAS-51) and compiles flowboard-api to
+        # dist/src/server.js, which `pnpm --filter ./flowboard-api start` runs.
+        run: pnpm build
+
+      - name: Migrate the CI database
+        run: pnpm db:migrate
+
+      - name: Seed the prototype dataset
+        run: pnpm db:seed
+
       - name: Install Playwright browsers
         run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+
+      - name: Start the built API
+        run: |
+          set -euo pipefail
+          pnpm --filter ./flowboard-api run start >"$API_LOG" 2>&1 &
+          echo "$!" > api.pid
+          echo "started flowboard-api as pid $(cat api.pid), logging to $API_LOG"
+
+      - name: Wait for GET /v1/health to return ok
+        # The gate that makes this job a real end-to-end run: if the API failed
+        # to boot (bad env, unreachable database, migration drift) the job stops
+        # here with the API's own log instead of silently testing a dead proxy.
+        run: |
+          set -uo pipefail
+          for attempt in $(seq 1 60); do
+            body="$(curl -fsS http://localhost:3000/v1/health || true)"
+            if printf '%s' "$body" | grep -q '"status":"ok"'; then
+              echo "GET /v1/health ok after ${attempt}s: $body"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::GET http://localhost:3000/v1/health did not return status \"ok\" within 60s"
+          echo "----- flowboard-api log -----"
+          cat "$API_LOG" || true
+          exit 1
+
+      - name: End-to-end tests against the running API
+        run: pnpm test:e2e
+
+      - name: Stop the API
+        if: always()
+        run: |
+          if [ -f api.pid ]; then kill "$(cat api.pid)" 2>/dev/null || true; fi
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: flowboard-web/playwright-report/
+          retention-days: 7
+
+      - name: Upload the API log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowboard-api-log
+          path: flowboard-api-ci.log
           retention-days: 7
 
   audit:
