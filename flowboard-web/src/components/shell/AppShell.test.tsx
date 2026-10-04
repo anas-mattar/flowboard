@@ -56,4 +56,15 @@ describe('AppShell initial focus (FS §10 tab order, TAS-73)', () => {
     expect(heading).not.toHaveFocus();
     expect(document.activeElement).toBe(document.body);
   });
+
+  it('does not steal focus on first mount under StrictMode double-invocation', async () => {
+    const me = makeMeResponse();
+    mockFetchSequence(jsonResponse(200, me));
+
+    renderApp('/', { strict: true });
+    const heading = await screen.findByRole('heading', { name: messages.shell.boards });
+
+    expect(heading).not.toHaveFocus();
+    expect(document.activeElement).toBe(document.body);
+  });
 });
