@@ -10,7 +10,10 @@
   --color-sidebar: #1f2b45;
   --color-sidebar-2: #28365a;
   --color-text: #172b4d;
-  --color-text-dim: #6b778c;
+
+  /* Darker than the PT reference grey so dim text clears WCAG AA 4.5:1
+     against --color-bg (TAS-74: axe flagged 4.04:1 on .empty-state__body). */
+  --color-text-dim: #636e81;
   --color-line: #e2e5ea;
   --color-accent: #3d6df0;
   --color-accent-2: #2f57c4;
