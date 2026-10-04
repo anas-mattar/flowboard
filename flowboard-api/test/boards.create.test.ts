@@ -17,7 +17,10 @@ let app: FastifyInstance;
 let owner: TestAccount;
 
 beforeAll(async () => {
-  handle = await openTestDatabase();
+  // More than the default two connections: the concurrency test below needs
+  // one per in-flight create, or the pool itself would serialise them and the
+  // test would pass without the advisory lock doing any work.
+  handle = await openTestDatabase(BOARD_COLORS.length + 2);
   ({ app } = await buildTestApp(handle));
 });
 
@@ -119,6 +122,25 @@ describe('POST /v1/boards (AC 1)', () => {
     }
 
     expect(colors).toEqual([...BOARD_COLORS, BOARD_COLORS[0]]);
+  });
+
+  it('gives concurrent creates in one workspace distinct palette colours (CL-A12)', async () => {
+    // Five in flight at once, one per palette entry, so any two that read the
+    // same count would collide visibly. `inject` is in-process but each request
+    // takes its own pooled connection, so the transactions really do overlap;
+    // the workspace advisory lock is what orders the count-then-insert pairs.
+    const responses = await Promise.all(
+      BOARD_COLORS.map((_color, index) => create({ name: `Concurrent ${index}` })),
+    );
+
+    expect(responses.map((response) => response.statusCode)).toEqual(BOARD_COLORS.map(() => 201));
+
+    const colors = responses.map(
+      (response) => response.json<{ board: { color: string } }>().board.color,
+    );
+
+    expect(new Set(colors).size).toBe(BOARD_COLORS.length);
+    expect([...colors].sort()).toEqual([...BOARD_COLORS].sort());
   });
 
   it('leaves no rows at all when the transaction fails part way', async () => {
