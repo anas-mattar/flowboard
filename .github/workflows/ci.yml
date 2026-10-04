@@ -17,6 +17,22 @@ env:
   PNPM_VERSION: '9.15.9'
 
 jobs:
+  merge-guard:
+    # STANDARDS §1.12 (TAS-60, raised from the TAS-49 incident where PR #26 on
+    # scratch/TAS-49-red-proof, titled "SCRATCH DO NOT MERGE", was merged into
+    # main). Fails closed on a scratch head branch or a flagged title so a
+    # scratch pull request opened by mistake shows a red check.
+    name: Merge guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check head branch and title
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: tools/ci/merge-guard.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
