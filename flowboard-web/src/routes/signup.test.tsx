@@ -114,14 +114,15 @@ describe('signup route', () => {
     fireEvent.change(screen.getByLabelText(messages.auth.signup.password), {
       target: { value: 'a-very-long-password' },
     });
-    const form = screen.getByRole('button', { name: messages.auth.signup.submit }).closest('form');
-    if (!form) {
-      throw new Error('form not found');
-    }
-    fireEvent.click(screen.getByRole('button', { name: messages.auth.signup.submit }));
+    const submitButton = screen.getByRole('button', { name: messages.auth.signup.submit });
+    fireEvent.click(submitButton);
     await screen.findByRole('alert');
 
-    fireEvent.keyDown(form, { key: 'Escape' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(submitButton);
+    });
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
 
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();

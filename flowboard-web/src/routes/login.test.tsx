@@ -53,6 +53,31 @@ describe('login route', () => {
     );
   });
 
+  it('restores keyboard focus to the submit button on a failed login (X-03, FS §8)', async () => {
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(401, {
+        error: { code: 'invalid_credentials', message: 'Email or password is incorrect' },
+      }),
+    );
+
+    renderApp('/login');
+    await fillLoginForm('ada@example.com', 'wrong-password');
+    const submitButton = screen.getByRole('button', { name: messages.auth.login.submit });
+    fireEvent.click(submitButton);
+    await screen.findByRole('alert');
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(submitButton);
+    });
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+
   it('shows the retry-after minutes message for a 429', async () => {
     mockFetchSequence(
       unauthenticated(),
