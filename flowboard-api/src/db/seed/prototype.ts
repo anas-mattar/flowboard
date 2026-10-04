@@ -1,4 +1,4 @@
-import { DEFAULT_LABELS } from '@flowboard/shared';
+import { AVATAR_COLORS, type AvatarColor, DEFAULT_LABELS } from '@flowboard/shared';
 
 /**
  * The prototype `state` object (FS §9, `docs/product/flowboard-prototype.html`)
@@ -24,7 +24,28 @@ export interface SeedUser {
   readonly email: string;
   readonly displayName: string;
   readonly initials: string;
-  readonly avatarColor: string;
+  readonly avatarColor: AvatarColor;
+}
+
+/**
+ * The avatar colour for the nth seeded user. The prototype hard-codes one hex
+ * per user; indexing `AVATAR_COLORS` in the same order keeps the PT's u1..u5
+ * appearance while leaving `flowboard-shared` the single source of truth for
+ * the palette. A palette change — TAS-74 darkened every hue so white `.avatar`
+ * text clears WCAG AA 4.5:1 (FS §8) — then reaches the seed with no edit here.
+ *
+ * Indexing rather than `deriveAvatarColor` is deliberate: that function hashes
+ * the user id, which the seed mints fresh on every run, so it could not hold
+ * the prototype's colour order.
+ */
+function seedAvatarColor(index: number): AvatarColor {
+  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
+
+  // Unreachable while the palette is non-empty; narrowed rather than asserted
+  // so `noUncheckedIndexedAccess` stays on.
+  if (color === undefined) throw new Error('seedAvatarColor: AVATAR_COLORS is empty');
+
+  return color;
 }
 
 export const SEED_USERS: readonly SeedUser[] = [
@@ -33,35 +54,35 @@ export const SEED_USERS: readonly SeedUser[] = [
     email: `anas@${SEED_EMAIL_DOMAIN}`,
     displayName: 'Anas Matar',
     initials: 'AM',
-    avatarColor: '#3d6df0',
+    avatarColor: seedAvatarColor(0),
   },
   {
     key: 'u2',
     email: `lena@${SEED_EMAIL_DOMAIN}`,
     displayName: 'Lena Fischer',
     initials: 'LF',
-    avatarColor: '#8f5bff',
+    avatarColor: seedAvatarColor(1),
   },
   {
     key: 'u3',
     email: `omar@${SEED_EMAIL_DOMAIN}`,
     displayName: 'Omar Haddad',
     initials: 'OH',
-    avatarColor: '#22a06b',
+    avatarColor: seedAvatarColor(2),
   },
   {
     key: 'u4',
     email: `priya@${SEED_EMAIL_DOMAIN}`,
     displayName: 'Priya Nair',
     initials: 'PN',
-    avatarColor: '#e2703a',
+    avatarColor: seedAvatarColor(3),
   },
   {
     key: 'u5',
     email: `tom@${SEED_EMAIL_DOMAIN}`,
     displayName: 'Tom Becker',
     initials: 'TB',
-    avatarColor: '#c9372c',
+    avatarColor: seedAvatarColor(4),
   },
 ];
 
