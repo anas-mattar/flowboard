@@ -269,6 +269,11 @@ jobs:
         run: pnpm --filter ./flowboard-web exec playwright install --with-deps chromium
 
       - name: Start the built API
+        env:
+          # SCRATCH BRANCH ONLY (TAS-49 acceptance criterion 2). Deliberately
+          # wrong: the API listens on 3001 while the health gate and the Vite
+          # proxy both target 3000, so the job must go red at the health gate.
+          PORT: '3001'
         run: |
           set -euo pipefail
           pnpm --filter ./flowboard-api run start >"$API_LOG" 2>&1 &
