@@ -14,7 +14,9 @@ for (const colorScheme of THEMES) {
   }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
-    await expect(page).toHaveURL(/\/login$/);
+    // FB-03's route guard redirects with `?next=<path>` (acceptance criterion 5,
+    // src/routes/authenticated.tsx) so the matched URL carries a query string.
+    await expect(page).toHaveURL(/\/login(\?.*)?$/);
     await expect(page.getByRole('heading', { name: messages.auth.login.title })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
 
