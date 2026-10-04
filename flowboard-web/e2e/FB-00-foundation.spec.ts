@@ -9,14 +9,12 @@ const THEMES = ['light', 'dark'] as const;
 // covers the signed-out entry point; FB-02's own e2e suite (signed-up,
 // signed-in flows) is tracked separately.
 for (const colorScheme of THEMES) {
-
   test(`FB-00 app shell redirects to sign in and is axe-clean (${colorScheme})`, async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
     await expect(page).toHaveURL(/\/login$/);
- main
     await expect(page.getByRole('heading', { name: messages.auth.login.title })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
 
