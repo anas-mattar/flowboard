@@ -48,3 +48,16 @@ export async function signInFreshUser(page: Page, label: string): Promise<TestUs
   await page.goto('/');
   return user;
 }
+
+/**
+ * Creates one board through the real API for the signed-in session, so a
+ * fresh user's `/` redirects to that board (FB-04 spec §4 item 15) instead of
+ * rendering the empty-workspace state. Used by shell-level assertions that
+ * need a landing page with no board-specific autofocus of their own.
+ */
+export async function createBoardViaApi(request: APIRequestContext, name: string): Promise<void> {
+  const response = await request.post('/v1/boards', { data: { name } });
+  if (!response.ok()) {
+    throw new Error(`API board creation failed: ${response.status()} ${await response.text()}`);
+  }
+}

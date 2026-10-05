@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { messages } from '../src/i18n/messages';
-import { signInFreshUser, signUpViaApi, makeTestUser } from './support/auth';
+import { createBoardViaApi, signInFreshUser, signUpViaApi, makeTestUser } from './support/auth';
 
 // FB-03 spec §10 end-to-end row. Each test signs up a fresh user through the
 // real API (STANDARDS §4) rather than the seeded owner, so shell layout
@@ -111,7 +111,16 @@ test('FB-03 redirects signed-out visitor and returns to next after login', async
 });
 
 test('FB-03 tab order and focus rings', async ({ page }) => {
-  await signInFreshUser(page, 'tab-order');
+  const user = makeTestUser('tab-order');
+  await signUpViaApi(page.request, user);
+  // FB-04's empty-workspace `/` deliberately autofocuses the create-board
+  // input (spec §4 item 15), which would make the first `Tab` below land on
+  // whatever follows that input rather than the skip link. Give this user a
+  // board so `/` redirects there instead, isolating this assertion to the
+  // generic app-shell chrome it actually tests (AppShell.test.tsx documents
+  // the same split for the unit-test equivalent).
+  await createBoardViaApi(page.request, 'Tab order board');
+  await page.goto('/');
 
   // Wait for the shell to finish mounting before driving Tab: pressing Tab
   // immediately after `goto()` races React hydration, landing the first Tab
@@ -134,6 +143,21 @@ test('FB-03 tab order and focus rings', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.toggleSidebar }));
 
+  // The top bar's `titleSlot` (FB-04 spec §5) comes next on a board page:
+  // title input, star toggle, board menu. The title input swaps the usual
+  // outline ring for an `--accent` border (spec §4.2), so it gets its own
+  // focus-style check rather than `expectFocusedAndRinged`'s outline check.
+  await page.keyboard.press('Tab');
+  const titleInput = page.getByLabel(messages.boards.title.label);
+  await expect(titleInput).toBeFocused();
+  await expect(titleInput).toHaveCSS('border-color', /^(?!transparent$|rgba\(0, 0, 0, 0\)$).+/);
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: messages.boards.star }));
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: messages.boards.actions }));
+
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.search }));
 
@@ -149,8 +173,14 @@ test('FB-03 tab order and focus rings', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: THEME_TOGGLE_NAME }));
 
-  // No board rows exist yet (FB-04), so the sidebar's only item is the
-  // footer menu trigger.
+  // The sidebar (FB-04) lists the one seeded board row, then the "+ Create
+  // board" row, before the footer menu trigger.
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('link', { name: /Tab order board/ }));
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: /Create board/ }));
+
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.userMenu }));
 });

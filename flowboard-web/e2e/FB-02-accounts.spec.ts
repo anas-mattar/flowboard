@@ -48,7 +48,10 @@ test('FB-02 logs in with seeded user', async ({ page }) => {
   await page.getByLabel(messages.auth.login.password, { exact: true }).fill(SEEDED_USER.password);
   await page.getByRole('button', { name: messages.auth.login.submit }).click();
 
-  await expect(page).toHaveURL('/');
+  // The seeded workspace already has boards, so `/` (FB-04 spec §4 item 15)
+  // redirects to the first board rather than staying on an empty-workspace
+  // `/` as it did before FB-04 existed.
+  await expect(page).toHaveURL(/\/boards\/.+/);
   await expect(page.getByText(SEEDED_USER.displayName, { exact: true })).toBeVisible();
   await expect(page.getByText(messages.role.workspaceAdmin)).toBeVisible();
 });
