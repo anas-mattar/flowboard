@@ -1,24 +1,63 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { messages } from '../i18n/messages';
-import { makeMeResponse } from '../test/fixtures';
+import { makeBoardSummary, makeMeResponse } from '../test/fixtures';
 import { emptyResponse, jsonResponse, mockFetchSequence } from '../test/mock-fetch';
 import { renderApp } from '../test/render-app';
+
+function boardsPage(items: ReturnType<typeof makeBoardSummary>[]) {
+  return jsonResponse(200, { items, nextCursor: null });
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('index route', () => {
-  it('shows the app shell with the signed-in user and the "no boards" placeholder', async () => {
+describe('index route (FB-04 spec §4 item 15)', () => {
+  it('shows the empty workspace state with the create form focused when there are no boards', async () => {
     const me = makeMeResponse();
-    mockFetchSequence(jsonResponse(200, me));
+    mockFetchSequence(jsonResponse(200, me), boardsPage([]));
 
     renderApp('/');
 
     expect(await screen.findByText(me.user.displayName)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: messages.shell.noBoardsTitle })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: messages.app.name })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: messages.boards.empty.title })).toBeInTheDocument();
+    const input = screen.getByPlaceholderText(messages.boards.create.placeholder);
+    await waitFor(() => {
+      expect(input).toHaveFocus();
+    });
+  });
+
+  it('redirects to the first board in sidebar order when the workspace has boards', async () => {
+    const me = makeMeResponse();
+    const first = makeBoardSummary({ name: 'Alpha' });
+    const second = makeBoardSummary({ name: 'Beta' });
+    mockFetchSequence(
+      jsonResponse(200, me),
+      boardsPage([first, second]),
+      jsonResponse(200, {
+        board: {
+          id: first.id,
+          workspaceId: first.workspaceId,
+          name: first.name,
+          color: first.color,
+          archivedAt: null,
+          createdAt: first.createdAt,
+          updatedAt: first.updatedAt,
+        },
+        members: [],
+        labels: [],
+        lists: [],
+        starred: false,
+        callerRole: 'admin',
+      }),
+    );
+
+    const { router } = renderApp('/');
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/boards/${first.id}`);
+    });
   });
 
   it('redirects a signed-out visitor to /login?next=/ (FB-03 spec acceptance criterion 5)', async () => {
@@ -36,7 +75,7 @@ describe('index route', () => {
 
   it('signing out from the footer menu clears the session and navigates to /login', async () => {
     const me = makeMeResponse();
-    mockFetchSequence(jsonResponse(200, me), emptyResponse(204));
+    mockFetchSequence(jsonResponse(200, me), boardsPage([]), emptyResponse(204));
 
     renderApp('/');
 

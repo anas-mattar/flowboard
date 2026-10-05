@@ -19,6 +19,8 @@ export interface AppShellProps {
   /** FB-04 fills this with the board title and star; defaults to the "Boards" heading. */
   title?: string;
   titleSlot?: ReactNode;
+  /** FB-04 fills this with the sidebar board list. */
+  boardsSlot?: ReactNode;
 }
 
 /**
@@ -26,7 +28,12 @@ export interface AppShellProps {
  * outlet. Owns the sidebar collapse/overlay state and the theme, and moves
  * focus to the page heading on route change (spec §5 "Focus behaviour").
  */
-export function AppShell({ children, title = messages.shell.boards, titleSlot }: AppShellProps) {
+export function AppShell({
+  children,
+  title = messages.shell.boards,
+  titleSlot,
+  boardsSlot,
+}: AppShellProps) {
   const session = useSession();
   const signOut = useSignOut();
   const [collapsed, toggleCollapsed] = useSidebarCollapse();
@@ -145,6 +152,7 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
           void signOut();
         }}
         onKeyDown={overlayOpen ? handleSidebarKeyDown : undefined}
+        boardsSlot={boardsSlot}
       />
       <main id="main-content" className="shell__main">
         <h1 ref={headingRef} className="visually-hidden" tabIndex={-1}>

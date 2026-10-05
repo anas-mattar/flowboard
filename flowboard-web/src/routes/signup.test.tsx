@@ -15,6 +15,11 @@ function unauthenticated() {
   });
 }
 
+/** `/` always fetches the sidebar board list after `GET /v1/me` (FB-04 §4 item 15). */
+function boardsPage() {
+  return jsonResponse(200, { items: [], nextCursor: null });
+}
+
 describe('signup route', () => {
   it('redirects to /login beforeLoad if unauthenticated, then renders the form', async () => {
     mockFetchSequence(unauthenticated());
@@ -55,7 +60,12 @@ describe('signup route', () => {
   it('submits valid input, then lands on / signed in (FB-02 spec §4 item 13)', async () => {
     const auth = makeAuthResponse();
     const me = makeMeResponse({ user: auth.user });
-    mockFetchSequence(unauthenticated(), jsonResponse(201, auth), jsonResponse(200, me));
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(201, auth),
+      jsonResponse(200, me),
+      boardsPage(),
+    );
 
     renderApp('/signup');
 

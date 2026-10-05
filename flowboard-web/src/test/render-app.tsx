@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 import { render } from '@testing-library/react';
 import { StrictMode } from 'react';
+import { ToastProvider } from '../components/primitives/ToastProvider';
 import { routeTree } from '../routeTree';
 
 export interface RenderAppOptions {
@@ -23,7 +24,9 @@ export function renderApp(initialPath: string, options: RenderAppOptions = {}) {
 
   const tree = (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>
   );
 

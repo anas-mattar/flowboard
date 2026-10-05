@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { messages } from '../src/i18n/messages';
-import { signInFreshUser, signUpViaApi, makeTestUser } from './support/auth';
+import { createBoardViaApi, signInFreshUser, signUpViaApi, makeTestUser } from './support/auth';
 
 // FB-03 spec §10 end-to-end row. Each test signs up a fresh user through the
 // real API (STANDARDS §4) rather than the seeded owner, so shell layout
@@ -111,7 +111,16 @@ test('FB-03 redirects signed-out visitor and returns to next after login', async
 });
 
 test('FB-03 tab order and focus rings', async ({ page }) => {
-  await signInFreshUser(page, 'tab-order');
+  const user = makeTestUser('tab-order');
+  await signUpViaApi(page.request, user);
+  // FB-04's empty-workspace `/` deliberately autofocuses the create-board
+  // input (spec §4 item 15), which would make the first `Tab` below land on
+  // whatever follows that input rather than the skip link. Give this user a
+  // board so `/` redirects there instead, isolating this assertion to the
+  // generic app-shell chrome it actually tests (AppShell.test.tsx documents
+  // the same split for the unit-test equivalent).
+  await createBoardViaApi(page.request, 'Tab order board');
+  await page.goto('/');
 
   // Wait for the shell to finish mounting before driving Tab: pressing Tab
   // immediately after `goto()` races React hydration, landing the first Tab
@@ -134,6 +143,21 @@ test('FB-03 tab order and focus rings', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.toggleSidebar }));
 
+  // The top bar's `titleSlot` (FB-04 spec §5) comes next on a board page:
+  // title input, star toggle, board menu. The title input swaps the usual
+  // outline ring for an `--accent` border (spec §4.2), so it gets its own
+  // focus-style check rather than `expectFocusedAndRinged`'s outline check.
+  await page.keyboard.press('Tab');
+  const titleInput = page.getByLabel(messages.boards.title.label);
+  await expect(titleInput).toBeFocused();
+  await expect(titleInput).toHaveCSS('border-color', /^(?!transparent$|rgba\(0, 0, 0, 0\)$).+/);
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: messages.boards.star }));
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: messages.boards.actions }));
+
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.search }));
 
@@ -149,11 +173,14 @@ test('FB-03 tab order and focus rings', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: THEME_TOGGLE_NAME }));
 
-  // No board rows exist yet (FB-04), so the sidebar's only item is the
-  // footer menu trigger. FB-04 (TAS-23) adds a real focusable step inside
-  // `main` once board rows exist; until then `<main>` has no focusable
-  // children, so the DOM-order assertion below is the only way to catch a
-  // regression that puts it ahead of the sidebar again.
+  // The sidebar (FB-04) lists the one seeded board row, then the "+ Create
+  // board" row, before the footer menu trigger.
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('link', { name: /Tab order board/ }));
+
+  await page.keyboard.press('Tab');
+  await expectFocusedAndRinged(page.getByRole('button', { name: /Create board/ }));
+
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.userMenu }));
 
@@ -208,19 +235,27 @@ test('FB-03 shell at 768 px overlays sidebar', async ({ page }) => {
 test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await signInFreshUser(page, 'mobile-tab-order');
+  // FB-04's sidebar always renders at least the "+ Create board" row ahead of
+  // the footer menu trigger, so give this user a real board too: it makes the
+  // trap's full cycle (board row -> create-board -> footer menu -> wraps to
+  // board row) deterministic instead of asserting on a single trivial item.
+  await createBoardViaApi(page.request, 'Mobile board');
+  await page.goto('/');
 
   const toggle = page.getByRole('button', { name: messages.shell.toggleSidebar });
   const sidebar = page.locator('#app-sidebar');
   const scrim = page.locator('.shell__scrim');
-  // No board rows exist yet (FB-04), so the footer menu trigger is the only
-  // focusable control the overlay can move focus to or trap Tab around.
+  const boardLink = page.getByRole('link', { name: /Mobile board/ });
+  const createBoardButton = page.getByRole('button', { name: /Create board/ });
   const footerMenuTrigger = page.getByRole('button', { name: messages.shell.userMenu });
 
   await toggle.click();
   await expect(sidebar).toHaveAttribute('data-visible', 'true');
 
-  // Focus lands inside the sidebar on open (TAS-86 clarification).
-  await expect(footerMenuTrigger).toBeFocused();
+  // Focus lands on the first focusable sidebar control on open (TAS-86
+  // clarification) — the board row, now that FB-04 adds board rows ahead of
+  // the footer menu trigger.
+  await expect(boardLink).toBeFocused();
   await expect(sidebar.locator(':focus')).toHaveCount(1);
 
   // Exactly one "Toggle sidebar" control exists; the scrim is not a second
@@ -235,10 +270,17 @@ test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page })
   });
   expect(scrimFocusable).toBe(false);
 
-  // Tab from the only focusable sidebar control wraps back to itself rather
-  // than escaping to the top bar (TAS-86/TAS-87 tab-trap).
+  // Tab walks the sidebar's focusable controls in order and wraps from the
+  // last (footer menu trigger) back to the first (board row) rather than
+  // escaping to the top bar (TAS-86/TAS-87 tab-trap).
+  await page.keyboard.press('Tab');
+  await expect(createBoardButton).toBeFocused();
+
   await page.keyboard.press('Tab');
   await expect(footerMenuTrigger).toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(boardLink).toBeFocused();
 
   // Esc closes the overlay and returns focus to ☰ (TAS-86 clarification).
   await page.keyboard.press('Escape');

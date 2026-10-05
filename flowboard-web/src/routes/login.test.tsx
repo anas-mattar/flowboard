@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { messages } from '../i18n/messages';
-import { makeAuthResponse, makeMeResponse } from '../test/fixtures';
+import { makeAuthResponse, makeBoardHydrated, makeMeResponse } from '../test/fixtures';
 import { jsonResponse, mockFetchSequence } from '../test/mock-fetch';
 import { renderApp } from '../test/render-app';
 
@@ -13,6 +13,11 @@ function unauthenticated() {
   return jsonResponse(401, {
     error: { code: 'unauthenticated', message: 'Authentication required' },
   });
+}
+
+/** `/` always fetches the sidebar board list after `GET /v1/me` (FB-04 §4 item 15). */
+function boardsPage() {
+  return jsonResponse(200, { items: [], nextCursor: null });
 }
 
 async function fillLoginForm(email: string, password: string) {
@@ -27,7 +32,7 @@ async function fillLoginForm(email: string, password: string) {
 describe('login route', () => {
   it('redirects a signed-in visitor to / (FB-02 spec §4 item 13)', async () => {
     const me = makeMeResponse();
-    mockFetchSequence(jsonResponse(200, me));
+    mockFetchSequence(jsonResponse(200, me), boardsPage());
 
     renderApp('/login');
 
@@ -98,7 +103,12 @@ describe('login route', () => {
   it('logs in with valid input and lands on / signed in', async () => {
     const auth = makeAuthResponse();
     const me = makeMeResponse({ user: auth.user });
-    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(200, auth),
+      jsonResponse(200, me),
+      boardsPage(),
+    );
 
     renderApp('/login');
     await fillLoginForm('ada@example.com', 'a-very-long-password');
@@ -112,7 +122,12 @@ describe('login route', () => {
   it('is fully operable by keyboard: Enter submits', async () => {
     const auth = makeAuthResponse();
     const me = makeMeResponse({ user: auth.user });
-    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(200, auth),
+      jsonResponse(200, me),
+      boardsPage(),
+    );
 
     renderApp('/login');
     await fillLoginForm('ada@example.com', 'a-very-long-password');
@@ -128,7 +143,13 @@ describe('login route', () => {
   it('returns to the ?next= path after a successful login (FB-03 spec acceptance criterion 5)', async () => {
     const auth = makeAuthResponse();
     const me = makeMeResponse({ user: auth.user });
-    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+    const board = makeBoardHydrated({ board: { ...makeBoardHydrated().board, id: 'abc' } });
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(200, auth),
+      jsonResponse(200, me),
+      jsonResponse(200, board),
+    );
 
     const { router } = renderApp('/login?next=%2Fboards%2Fabc');
     await fillLoginForm('ada@example.com', 'a-very-long-password');
@@ -142,7 +163,12 @@ describe('login route', () => {
   it('falls back to / for an unsafe ?next= value (open-redirect guard)', async () => {
     const auth = makeAuthResponse();
     const me = makeMeResponse({ user: auth.user });
-    mockFetchSequence(unauthenticated(), jsonResponse(200, auth), jsonResponse(200, me));
+    mockFetchSequence(
+      unauthenticated(),
+      jsonResponse(200, auth),
+      jsonResponse(200, me),
+      boardsPage(),
+    );
 
     const { router } = renderApp('/login?next=%2F%2Fevil.example');
     await fillLoginForm('ada@example.com', 'a-very-long-password');

@@ -6,6 +6,7 @@ import { ToastProvider } from './components/primitives/ToastProvider';
 import { createAppRouter } from './router';
 import './styles/tokens.css';
 import './styles/shell.css';
+import './styles/boards.css';
 import { applyInitialTheme } from './theme';
 
 applyInitialTheme(window);
