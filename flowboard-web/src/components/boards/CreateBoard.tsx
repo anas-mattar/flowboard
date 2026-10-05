@@ -1,7 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import type { FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { useToast } from '../../components/primitives/ToastProvider';
 import { useCreateBoard } from '../../hooks/useBoards';
 import { messages } from '../../i18n/messages';
@@ -81,15 +80,7 @@ export function CreateBoard({ autoStart = false }: CreateBoardProps) {
         onSuccess: (hydrated) => {
           reset();
           markBoardTitleForFocus(hydrated.board.id);
-          // Force the toast's state update to commit on its own before
-          // starting the navigation (TAS-103): `navigate` awaits a second
-          // round trip in `boardRoute`'s `beforeLoad` before the route
-          // renders, and calling it in the same batch as `showToast` let
-          // that wait gate the toast's first paint too, pushing create
-          // past the X-01 200ms budget on non-Chromium engines.
-          flushSync(() => {
-            showToast(messages.boards.toast.created, 'success');
-          });
+          showToast(messages.boards.toast.created, 'success');
           void navigate({ to: '/boards/$boardId', params: { boardId: hydrated.board.id } });
         },
         onError: () => {

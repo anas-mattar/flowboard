@@ -35,7 +35,18 @@ export function useCreateBoard() {
     mutationFn: (body) => createBoard(body),
     onSuccess: (hydrated) => {
       queryClient.setQueryData(boardQueryKey(hydrated.board.id), hydrated);
-      return queryClient.invalidateQueries({ queryKey: boardsQueryKey });
+      // Fire-and-forget (TAS-107): `useMutation`'s `onSuccess` is awaited
+      // before the per-call `onSuccess` passed to `.mutate()` runs, so
+      // returning this promise made the caller's toast and `navigate` wait
+      // on a second `GET /v1/boards` round trip for the sidebar refresh
+      // before either could fire. Correct regardless of X-01: the caller
+      // shouldn't block on a background cache refresh it doesn't render
+      // synchronously. Same pattern as `BoardTitle.tsx`'s rename
+      // invalidation. NOTE: an A/B run (TAS-107) showed this does not
+      // change the X-01 create-toast pass rate under `--workers=3` load
+      // (30/36 both with and without) — the flakiness there is dominated
+      // by test-worker CPU contention, not this code path.
+      void queryClient.invalidateQueries({ queryKey: boardsQueryKey });
     },
   });
 }
