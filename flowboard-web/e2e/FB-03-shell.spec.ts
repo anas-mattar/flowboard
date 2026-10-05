@@ -113,6 +113,13 @@ test('FB-03 redirects signed-out visitor and returns to next after login', async
 test('FB-03 tab order and focus rings', async ({ page }) => {
   await signInFreshUser(page, 'tab-order');
 
+  // Wait for the shell to finish mounting before driving Tab: pressing Tab
+  // immediately after `goto()` races React hydration, landing the first Tab
+  // on a pre-hydration DOM state and leaving the (already-rendered) skip
+  // link unfocused for the rest of the sequence.
+  await expect(page.getByRole('button', { name: messages.shell.userMenu })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
   async function expectFocusedAndRinged(locator: ReturnType<typeof page.getByRole>) {
     await expect(locator).toBeFocused();
     const outlineStyle = await locator.evaluate((node) => getComputedStyle(node).outlineStyle);
@@ -203,6 +210,7 @@ for (const colorScheme of SHELL_THEMES) {
   test(`FB-03 shell is axe-clean, sidebar expanded (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await signInFreshUser(page, `axe-expanded-${colorScheme}`);
+    await expect(page.getByRole('button', { name: messages.shell.userMenu })).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });
 

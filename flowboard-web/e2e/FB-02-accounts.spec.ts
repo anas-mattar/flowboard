@@ -121,10 +121,15 @@ for (const colorScheme of THEMES) {
   }) => {
     await page.emulateMedia({ colorScheme });
 
+    // Each `goto` races SPA hydration: scanning before the route renders its
+    // form catches an intermediate DOM with no `<main>`/`<h1>` yet, which is
+    // slow enough to reproduce on WebKit. Wait for a stable field first.
     await page.goto('/signup');
+    await expect(page.getByLabel(messages.auth.signup.email)).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     await page.goto('/login');
+    await expect(page.getByLabel(messages.auth.login.email)).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
     await page.getByLabel(messages.auth.login.email).fill(SEEDED_USER.email);
