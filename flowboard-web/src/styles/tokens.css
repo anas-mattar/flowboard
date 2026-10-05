@@ -21,6 +21,12 @@
   /* Darker than the PT reference red so error text clears WCAG AA 4.5:1
      against --color-panel and --color-panel-2 (FB-02 spec §4 item 14). */
   --color-danger: #b42318;
+
+  /* Fixed (not redefined per theme) background for white-on-red controls
+     such as .btn--danger. --color-danger itself is tuned per theme for text
+     legibility and is too light in dark mode for white text at 4.5:1
+     (TAS-102: 2.77:1 with #ff6b6b). This stays dark enough in both themes. */
+  --color-danger-strong: #b42318;
   --shadow: 0 1px 2px rgb(9 30 66 / 16%), 0 0 1px rgb(9 30 66 / 12%);
   --shadow-lg: 0 8px 24px rgb(9 30 66 / 22%);
   --radius: 10px;
