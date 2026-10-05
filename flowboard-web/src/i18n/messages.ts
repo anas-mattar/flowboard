@@ -25,8 +25,6 @@ export const messages = {
     members: 'Board members',
     invite: 'Invite',
     userMenu: 'User menu',
-    noBoardsTitle: 'No boards yet',
-    noBoardsBody: 'Create your first board.',
   },
   role: {
     workspaceAdmin: 'Workspace admin',
@@ -76,6 +74,51 @@ export const messages = {
     passwordLength: 'Password must be 10 to 128 characters.',
     required: 'This field is required.',
     tooLong: 'That value is too long.',
+  },
+  /*
+   * FB-04 §5 catalogue. The spec writes these as dotted keys
+   * (`boards.create.placeholder`, ...); nested here the same way every other
+   * namespace in this file is, since `boards.create` also needs to be a
+   * plain button label ("+ Create board") and cannot be both a string and an
+   * object at the same path — `create.label` carries that string instead.
+   */
+  boards: {
+    create: {
+      label: 'Create board',
+      placeholder: 'Board name',
+      submit: 'Create',
+      required: 'Enter a board name.',
+    },
+    starred: 'Starred',
+    title: {
+      label: 'Board name',
+    },
+    star: 'Star board',
+    unstar: 'Unstar board',
+    actions: 'Board actions',
+    archive: {
+      label: 'Archive board',
+      confirmTitle: (name: string): string => `Archive '${name}'?`,
+      confirmBody: 'You can restore it from archived items for 30 days.',
+      confirm: 'Archive board',
+    },
+    empty: {
+      title: 'No boards yet',
+      body: 'Create your first board to start organising work.',
+    },
+    toast: {
+      created: 'Board created',
+      renamed: 'Board renamed',
+      archived: 'Board archived',
+      starred: 'Board starred',
+      unstarred: 'Board unstarred',
+      conflict: 'This board was changed elsewhere, showing the latest',
+      failed: 'Board failed to update',
+    },
+  },
+  lists: {
+    empty: 'No cards yet',
+    wipPill: (count: number, limit: number): string => `${String(count)} / ${String(limit)}`,
   },
 } as const;
 
