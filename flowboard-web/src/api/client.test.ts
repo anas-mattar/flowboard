@@ -25,6 +25,26 @@ describe('request', () => {
     await expect(request('/v1/auth/logout', { method: 'POST' })).resolves.toBeUndefined();
   });
 
+  it('omits Content-Type for a bodyless request', async () => {
+    const impl = vi.fn().mockResolvedValue(emptyResponse(204));
+    vi.stubGlobal('fetch', impl);
+
+    await request('/v1/auth/logout', { method: 'POST' });
+
+    const [, init] = impl.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+  });
+
+  it('sets Content-Type when a body is present', async () => {
+    const impl = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }));
+    vi.stubGlobal('fetch', impl);
+
+    await request('/v1/auth/login', { method: 'POST', body: JSON.stringify({ email: 'a@b.com' }) });
+
+    const [, init] = impl.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
+  });
+
   it('parses the response body on success', async () => {
     mockFetchSequence(jsonResponse(200, { hello: 'world' }));
 

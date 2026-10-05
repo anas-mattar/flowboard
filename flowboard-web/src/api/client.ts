@@ -46,16 +46,20 @@ function parseRetryAfter(response: Response): number | undefined {
  * web app relies solely on the cookie, never the bearer path.
  */
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...(init.headers as Record<string, string> | undefined),
+  };
+  if (init.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...init.headers,
-      },
+      headers,
     });
   } catch {
     throw new ApiClientError({ code: 'network_error', message: 'Could not reach the server.' });
