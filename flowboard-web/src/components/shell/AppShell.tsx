@@ -1,8 +1,10 @@
 import { useRouterState } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { getFocusableElements } from '../primitives/focusable';
 import { useSidebarCollapse } from '../../hooks/useSidebarCollapse';
 import { useSession } from '../../hooks/useSession';
+import { useShortcut } from '../../hooks/useShortcut';
 import { useSignOut } from '../../hooks/useSignOut';
 import { useTheme } from '../../hooks/useTheme';
 import { useNarrowViewport } from '../../hooks/useViewport';
@@ -32,6 +34,8 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
   const isNarrow = useNarrowViewport(MOBILE_BREAKPOINT_PX);
   const theme = useTheme(session.data?.user.theme);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const previousPathname = useRef<string | null>(null);
   const pathname = useRouterState({ select: (routerState) => routerState.location.pathname });
 
@@ -42,17 +46,79 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
     previousPathname.current = pathname;
   }, [pathname]);
 
+  const sidebarVisible = isNarrow ? mobileOpen : !collapsed;
+  const overlayOpen = isNarrow && mobileOpen;
+
+  // Closes the narrow-viewport overlay on navigation (TAS-86 clarification,
+  // FB-03 spec §5): the overlay-close effect below then returns focus to ☰.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useShortcut(
+    'Escape',
+    () => {
+      setMobileOpen(false);
+    },
+    overlayOpen,
+  );
+
+  // A plain `useEffect`, not `useLayoutEffect`: the close-side cleanup must
+  // run after React's commit-phase focus/selection restoration (which
+  // otherwise re-focuses whatever was active in the sidebar before this
+  // commit, clobbering our own `.focus()` call if it runs during the layout
+  // phase instead) (TAS-86).
+  useEffect(() => {
+    if (!overlayOpen) {
+      return;
+    }
+    const container = sidebarRef.current;
+    const focusable = container ? getFocusableElements(container) : [];
+    focusable[0]?.focus();
+
+    return () => {
+      toggleButtonRef.current?.focus();
+    };
+  }, [overlayOpen]);
+
   if (!session.data) {
     return null;
   }
-
-  const sidebarVisible = isNarrow ? mobileOpen : !collapsed;
 
   function toggleSidebar() {
     if (isNarrow) {
       setMobileOpen((current) => !current);
     } else {
       toggleCollapsed();
+    }
+  }
+
+  // Traps Tab/Shift+Tab inside the sidebar while the narrow-viewport overlay
+  // is open (TAS-86 clarification, same wrap logic as `Dialog.tsx`); never
+  // wired up at desktop widths.
+  function handleSidebarKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key !== 'Tab') {
+      return;
+    }
+    const container = sidebarRef.current;
+    if (!container) {
+      return;
+    }
+    const focusable = getFocusableElements(container);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
+    const active = document.activeElement;
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -67,31 +133,24 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
         {messages.app.skipToContent}
       </a>
       {isNarrow && sidebarVisible ? (
-        <button
-          type="button"
+        <div
           className="shell__scrim"
-          aria-label={messages.shell.toggleSidebar}
-          onClick={() => {
+          aria-hidden="true"
+          onMouseDown={() => {
             setMobileOpen(false);
           }}
         />
       ) : null}
-      <div className="shell__column">
-        <TopBar
-          sidebarOpen={sidebarVisible}
-          onToggleSidebar={toggleSidebar}
-          theme={theme.preference}
-          onCycleTheme={theme.cycleTheme}
-          titleSlot={titleSlot}
-        />
-        <main id="main-content" className="shell__main">
-          <h1 ref={headingRef} className="visually-hidden" tabIndex={-1}>
-            {title}
-          </h1>
-          {children}
-        </main>
-      </div>
+      <TopBar
+        sidebarOpen={sidebarVisible}
+        onToggleSidebar={toggleSidebar}
+        theme={theme.preference}
+        onCycleTheme={theme.cycleTheme}
+        titleSlot={titleSlot}
+        toggleButtonRef={toggleButtonRef}
+      />
       <Sidebar
+        ref={sidebarRef}
         visible={sidebarVisible}
         workspaceName={currentWorkspace.name}
         displayName={user.displayName}
@@ -103,7 +162,14 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
         onSignOut={() => {
           void signOut();
         }}
+        onKeyDown={overlayOpen ? handleSidebarKeyDown : undefined}
       />
+      <main id="main-content" className="shell__main">
+        <h1 ref={headingRef} className="visually-hidden" tabIndex={-1}>
+          {title}
+        </h1>
+        {children}
+      </main>
     </div>
   );
 }

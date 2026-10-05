@@ -30,28 +30,35 @@
   inset-block-start: 0;
 }
 
+/*
+ * DOM order is now `header.topbar`, `nav#app-sidebar`, `main#main-content`
+ * (TAS-86: main must be last so FB-04's focusable content follows the
+ * sidebar/footer menu in tab order, not precede it). CSS grid keeps the
+ * visual layout unchanged: the sidebar spans both rows in the inline-start
+ * column while the top bar and main stack in the remaining column, so paint
+ * order no longer needs to track DOM order the way the old `order: -1` hack
+ * did. Column 1 always resolves to the inline-start side under grid's
+ * writing-mode-aware placement, so RTL mirrors with no extra rules.
+ */
+
 .shell {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
   block-size: 100vh;
   overflow: hidden;
 }
 
 .sidebar {
+  grid-column: 1;
+  grid-row: 1 / span 2;
   inline-size: 250px;
-  flex: 0 0 250px;
-
-  /*
-   * DOM order is `.shell__column` then `.sidebar` (TAS-81: top-bar controls
-   * must precede the sidebar/footer menu in tab order), but the sidebar
-   * still paints on the inline-start side, so pull it first visually. `order`
-   * only affects paint order, not Tab order, which always follows the DOM.
-   */
-  order: -1;
   background-color: var(--color-sidebar);
   color: #dfe6f5;
   display: flex;
   flex-direction: column;
-  transition: margin-inline-start 0.2s;
+  overflow: hidden;
+  transition: inline-size 0.2s;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -61,7 +68,7 @@
 }
 
 .sidebar[data-visible='false'] {
-  margin-inline-start: -250px;
+  inline-size: 0;
 }
 
 .sidebar__brand {
@@ -219,19 +226,12 @@
   position: fixed;
   inset: 0;
   background-color: rgb(9 30 66 / 50%);
-  border: none;
   z-index: 15;
-  cursor: pointer;
-}
-
-.shell__column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
 }
 
 .topbar {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -240,8 +240,8 @@
   background-color: var(--color-panel);
   border-block-end: 1px solid var(--color-line);
   block-size: 52px;
-  flex: none;
   flex-wrap: wrap;
+  min-inline-size: 0;
 }
 
 .topbar__title {
@@ -281,7 +281,9 @@
 }
 
 .shell__main {
-  flex: 1;
+  grid-column: 2;
+  grid-row: 2;
+  min-inline-size: 0;
   overflow: auto;
   background-color: var(--color-bg);
   padding: 24px;
@@ -309,20 +311,36 @@
 }
 
 @media (width <= 768px) {
+  /*
+   * Below the sidebar overlays content instead of pushing it (FB-03 spec
+   * §3, AC 9), so it slides in/out on its own margin rather than the
+   * desktop inline-size collapse above; `position: fixed` already removes
+   * it from the grid, so the (still 250px) sidebar never affects the
+   * `.shell` column tracks here.
+   */
   .sidebar {
     position: fixed;
     inset-block: 0;
     inset-inline-start: 0;
     z-index: 20;
+    inline-size: 250px;
     box-shadow: var(--shadow-lg);
+    transition: margin-inline-start 0.2s;
   }
 
   .sidebar[data-visible='false'] {
+    inline-size: 250px;
     margin-inline-start: -250px;
   }
 
   .sidebar[data-visible='true'] {
     margin-inline-start: 0;
+  }
+}
+
+@media (width <= 768px) and (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }
 
