@@ -63,7 +63,7 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
 
   return (
     <div className="shell">
-      <a className="shell__skip-link" href="#main-content">
+      <a className="shell__skip-link" href="#main-content" tabIndex={0}>
         {messages.app.skipToContent}
       </a>
       {isNarrow && sidebarVisible ? (
@@ -76,19 +76,6 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
           }}
         />
       ) : null}
-      <Sidebar
-        visible={sidebarVisible}
-        workspaceName={currentWorkspace.name}
-        displayName={user.displayName}
-        initials={user.initials}
-        avatarColor={user.avatarColor}
-        roleLabel={roleLabel}
-        theme={theme.preference}
-        onThemeChange={theme.setTheme}
-        onSignOut={() => {
-          void signOut();
-        }}
-      />
       <div className="shell__column">
         <TopBar
           sidebarOpen={sidebarVisible}
@@ -104,6 +91,19 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
           {children}
         </main>
       </div>
+      <Sidebar
+        visible={sidebarVisible}
+        workspaceName={currentWorkspace.name}
+        displayName={user.displayName}
+        initials={user.initials}
+        avatarColor={user.avatarColor}
+        roleLabel={roleLabel}
+        theme={theme.preference}
+        onThemeChange={theme.setTheme}
+        onSignOut={() => {
+          void signOut();
+        }}
+      />
     </div>
   );
 }
