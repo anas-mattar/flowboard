@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 import { useShortcut } from '../../hooks/useShortcut';
-import { getFocusableElements } from './focusable';
+import { getFocusableElements, handleTabTrap } from './focusable';
 
 export interface DialogProps {
   open: boolean;
@@ -46,29 +46,11 @@ export function Dialog({ open, onClose, titleId, children, closeOnScrim = true }
   }
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    if (event.key !== 'Tab') {
-      return;
-    }
     const container = containerRef.current;
     if (!container) {
       return;
     }
-    const focusable = getFocusableElements(container);
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-    const active = document.activeElement;
-
-    if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    handleTabTrap(event, container);
   }
 
   return (

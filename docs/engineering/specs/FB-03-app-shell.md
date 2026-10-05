@@ -83,6 +83,8 @@ Visual reference: PT `aside.sidebar`, `.brand`, `.side-sec`, `.side-foot`, `.top
 
 **(TAS-86 clarification)** At and below the 768 px breakpoint, opening the sidebar overlay moves focus to its first focusable control and traps Tab/Shift+Tab inside it (same wrap logic as the `Dialog` primitive); `Esc`, the scrim, the ☰ toggle and a route change all close the overlay and return focus to ☰. The scrim itself is a non-focusable, unnamed element (`aria-hidden="true"`) so it never becomes a second "Toggle sidebar" tab stop. None of this applies above 768 px, where the sidebar pushes content instead of overlaying it and ☰ only toggles the persisted collapse state.
 
+**(TAS-87 clarification)** `Esc` dismisses only the topmost open layer, not every open layer at once: with the overlay open and the footer menu open inside it, one `Esc` closes the menu and returns focus to its trigger; a second `Esc` then closes the overlay. `useShortcut` enforces this by stacking same-key registrations per mount and firing only the most recently enabled one, so the same layering applies to `Dialog` wherever a dialog can open while a popover is already open.
+
 **Focus behaviour**: on route change focus moves to the page heading (visually hidden `h1` inside the title slot until FB-04 supplies the board title). Dialog focus trap and restore as in AC 8.
 
 **Empty states**: `EmptyState` component (icon, heading, body, primary action slot). Content supplied by FB-04 ("No boards yet. Create your first board.").
