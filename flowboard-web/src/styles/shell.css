@@ -39,6 +39,14 @@
 .sidebar {
   inline-size: 250px;
   flex: 0 0 250px;
+
+  /*
+   * DOM order is `.shell__column` then `.sidebar` (TAS-81: top-bar controls
+   * must precede the sidebar/footer menu in tab order), but the sidebar
+   * still paints on the inline-start side, so pull it first visually. `order`
+   * only affects paint order, not Tab order, which always follows the DOM.
+   */
+  order: -1;
   background-color: var(--color-sidebar);
   color: #dfe6f5;
   display: flex;
