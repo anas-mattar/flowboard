@@ -235,19 +235,27 @@ test('FB-03 shell at 768 px overlays sidebar', async ({ page }) => {
 test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await signInFreshUser(page, 'mobile-tab-order');
+  // FB-04's sidebar always renders at least the "+ Create board" row ahead of
+  // the footer menu trigger, so give this user a real board too: it makes the
+  // trap's full cycle (board row -> create-board -> footer menu -> wraps to
+  // board row) deterministic instead of asserting on a single trivial item.
+  await createBoardViaApi(page.request, 'Mobile board');
+  await page.goto('/');
 
   const toggle = page.getByRole('button', { name: messages.shell.toggleSidebar });
   const sidebar = page.locator('#app-sidebar');
   const scrim = page.locator('.shell__scrim');
-  // No board rows exist yet (FB-04), so the footer menu trigger is the only
-  // focusable control the overlay can move focus to or trap Tab around.
+  const boardLink = page.getByRole('link', { name: /Mobile board/ });
+  const createBoardButton = page.getByRole('button', { name: /Create board/ });
   const footerMenuTrigger = page.getByRole('button', { name: messages.shell.userMenu });
 
   await toggle.click();
   await expect(sidebar).toHaveAttribute('data-visible', 'true');
 
-  // Focus lands inside the sidebar on open (TAS-86 clarification).
-  await expect(footerMenuTrigger).toBeFocused();
+  // Focus lands on the first focusable sidebar control on open (TAS-86
+  // clarification) — the board row, now that FB-04 adds board rows ahead of
+  // the footer menu trigger.
+  await expect(boardLink).toBeFocused();
   await expect(sidebar.locator(':focus')).toHaveCount(1);
 
   // Exactly one "Toggle sidebar" control exists; the scrim is not a second
@@ -262,10 +270,17 @@ test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page })
   });
   expect(scrimFocusable).toBe(false);
 
-  // Tab from the only focusable sidebar control wraps back to itself rather
-  // than escaping to the top bar (TAS-86/TAS-87 tab-trap).
+  // Tab walks the sidebar's focusable controls in order and wraps from the
+  // last (footer menu trigger) back to the first (board row) rather than
+  // escaping to the top bar (TAS-86/TAS-87 tab-trap).
+  await page.keyboard.press('Tab');
+  await expect(createBoardButton).toBeFocused();
+
   await page.keyboard.press('Tab');
   await expect(footerMenuTrigger).toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(boardLink).toBeFocused();
 
   // Esc closes the overlay and returns focus to ☰ (TAS-86 clarification).
   await page.keyboard.press('Escape');
