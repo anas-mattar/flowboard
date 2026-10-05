@@ -63,10 +63,12 @@ export function nextBoardColor(boardsEverCreatedInWorkspace: number): BoardColor
  * the same user always renders the same colour on every device without
  * storing a choice the user never made.
  *
- * The values coincide with `BOARD_COLORS` in the prototype, but the two are
+ * The values are darkened from the PT `BOARD_COLORS` reference so every
+ * hue clears WCAG AA 4.5:1 for white `.avatar` text (TAS-74: axe flagged
+ * ratios from 3.17:1 to 4.11:1 on the original swatch). The two are
  * separate vocabularies: re-theming boards must not re-colour people.
  */
-export const AVATAR_COLORS = ['#3d6df0', '#8f5bff', '#22a06b', '#e2703a', '#c9372c'] as const;
+export const AVATAR_COLORS = ['#3b6bf0', '#864eff', '#1c8559', '#c3521d', '#c9372c'] as const;
 
 export type AvatarColor = (typeof AVATAR_COLORS)[number];
 
