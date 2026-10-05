@@ -181,9 +181,7 @@ test('B-06 archive requires confirmation and hides the board', async ({ page }) 
 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByRole('heading', { name: "Archive 'To be archived'?" }),
-  ).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: "Archive 'To be archived'?" })).toBeVisible();
   await expect(dialog.getByText(messages.boards.archive.confirmBody)).toBeVisible();
 
   await dialog.getByRole('button', { name: messages.boards.archive.confirm }).click();
@@ -330,7 +328,9 @@ test('FB-04 keyboard-only create rename star archive', async ({ page }) => {
   // `getByText` does a case-insensitive substring match by default, so the
   // new title "Keyboard board renamed" (sidebar row, page heading) itself
   // matches the toast text "Board renamed"; scope to the toast region.
-  await expect(page.locator('.toast-region').getByText(messages.boards.toast.renamed)).toBeVisible();
+  await expect(
+    page.locator('.toast-region').getByText(messages.boards.toast.renamed),
+  ).toBeVisible();
 
   // Star: focus already landed on the star button via the Tab above.
   const starButton = page.getByRole('button', { name: messages.boards.star });
