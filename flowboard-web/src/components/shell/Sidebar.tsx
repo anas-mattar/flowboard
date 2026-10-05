@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
+import { forwardRef } from 'react';
 import type { UserTheme } from '@flowboard/shared';
 import { messages } from '../../i18n/messages';
 import { UserMenu } from './UserMenu';
@@ -15,22 +16,35 @@ export interface SidebarProps {
   onSignOut: () => void;
   /** FB-04 renders board rows here. */
   boardsSlot?: ReactNode;
+  /** Set only while the narrow-viewport overlay is open; traps Tab/Shift+Tab (TAS-86). */
+  onKeyDown?: ((event: KeyboardEvent<HTMLElement>) => void) | undefined;
 }
 
-export function Sidebar({
-  visible,
-  workspaceName,
-  displayName,
-  initials,
-  avatarColor,
-  roleLabel,
-  theme,
-  onThemeChange,
-  onSignOut,
-  boardsSlot,
-}: SidebarProps) {
+export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
+  {
+    visible,
+    workspaceName,
+    displayName,
+    initials,
+    avatarColor,
+    roleLabel,
+    theme,
+    onThemeChange,
+    onSignOut,
+    boardsSlot,
+    onKeyDown,
+  },
+  ref,
+) {
   return (
-    <nav id="app-sidebar" className="sidebar" aria-label={messages.app.name} data-visible={visible}>
+    <nav
+      id="app-sidebar"
+      className="sidebar"
+      aria-label={messages.app.name}
+      data-visible={visible}
+      ref={ref}
+      onKeyDown={onKeyDown}
+    >
       <div className="sidebar__brand">
         <span className="sidebar__mark" aria-hidden="true">
           F
@@ -54,4 +68,4 @@ export function Sidebar({
       </div>
     </nav>
   );
-}
+});

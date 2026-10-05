@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useId } from 'react';
 import type { UserTheme } from '@flowboard/shared';
 import { messages } from '../../i18n/messages';
@@ -10,6 +10,8 @@ export interface TopBarProps {
   onCycleTheme: () => void;
   /** FB-04 fills this with the board title and star. */
   titleSlot?: ReactNode;
+  /** Lets `AppShell` return focus here when the narrow-viewport overlay closes (TAS-86). */
+  toggleButtonRef?: Ref<HTMLButtonElement>;
 }
 
 /**
@@ -23,6 +25,7 @@ export function TopBar({
   theme,
   onCycleTheme,
   titleSlot,
+  toggleButtonRef,
 }: TopBarProps) {
   const comingSoonId = useId();
 
@@ -30,6 +33,7 @@ export function TopBar({
     <header className="topbar">
       <button
         type="button"
+        ref={toggleButtonRef}
         className="icon-btn"
         aria-expanded={sidebarOpen}
         aria-controls="app-sidebar"
