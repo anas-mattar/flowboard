@@ -150,9 +150,30 @@ test('FB-03 tab order and focus rings', async ({ page }) => {
   await expectFocusedAndRinged(page.getByRole('button', { name: THEME_TOGGLE_NAME }));
 
   // No board rows exist yet (FB-04), so the sidebar's only item is the
-  // footer menu trigger.
+  // footer menu trigger. FB-04 (TAS-23) adds a real focusable step inside
+  // `main` once board rows exist; until then `<main>` has no focusable
+  // children, so the DOM-order assertion below is the only way to catch a
+  // regression that puts it ahead of the sidebar again.
   await page.keyboard.press('Tab');
   await expectFocusedAndRinged(page.getByRole('button', { name: messages.shell.userMenu }));
+
+  // AC 6 / TAS-86 F1: `main` must come last in the DOM, after the sidebar.
+  // Asserted structurally (not via focus) because `main` has no focusable
+  // content yet.
+  const order = await page.evaluate(() => {
+    const topbar = document.querySelector('header.topbar');
+    const sidebar = document.querySelector('nav#app-sidebar');
+    const main = document.querySelector('main#main-content');
+    if (!topbar || !sidebar || !main) {
+      return null;
+    }
+    const topbarBeforeSidebar =
+      (topbar.compareDocumentPosition(sidebar) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const sidebarBeforeMain =
+      (sidebar.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    return { topbarBeforeSidebar, sidebarBeforeMain };
+  });
+  expect(order).toEqual({ topbarBeforeSidebar: true, sidebarBeforeMain: true });
 });
 
 test('FB-03 shell at 768 px overlays sidebar', async ({ page }) => {
@@ -182,6 +203,61 @@ test('FB-03 shell at 768 px overlays sidebar', async ({ page }) => {
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     ),
   ).toBe(true);
+});
+
+test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await signInFreshUser(page, 'mobile-tab-order');
+
+  const toggle = page.getByRole('button', { name: messages.shell.toggleSidebar });
+  const sidebar = page.locator('#app-sidebar');
+  const scrim = page.locator('.shell__scrim');
+  // No board rows exist yet (FB-04), so the footer menu trigger is the only
+  // focusable control the overlay can move focus to or trap Tab around.
+  const footerMenuTrigger = page.getByRole('button', { name: messages.shell.userMenu });
+
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute('data-visible', 'true');
+
+  // Focus lands inside the sidebar on open (TAS-86 clarification).
+  await expect(footerMenuTrigger).toBeFocused();
+  await expect(sidebar.locator(':focus')).toHaveCount(1);
+
+  // Exactly one "Toggle sidebar" control exists; the scrim is not a second
+  // one (TAS-83 review finding F2).
+  await expect(page.getByRole('button', { name: messages.shell.toggleSidebar })).toHaveCount(1);
+
+  // The scrim is non-focusable: not a button, and no non-negative tabindex.
+  const scrimFocusable = await scrim.evaluate((node) => {
+    const tabindex = node.getAttribute('tabindex');
+    const tabindexMakesFocusable = tabindex !== null && Number(tabindex) >= 0;
+    return node.tagName === 'BUTTON' || tabindexMakesFocusable;
+  });
+  expect(scrimFocusable).toBe(false);
+
+  // Tab from the only focusable sidebar control wraps back to itself rather
+  // than escaping to the top bar (TAS-86/TAS-87 tab-trap).
+  await page.keyboard.press('Tab');
+  await expect(footerMenuTrigger).toBeFocused();
+
+  // Esc closes the overlay and returns focus to ☰ (TAS-86 clarification).
+  await page.keyboard.press('Escape');
+  await expect(sidebar).toHaveAttribute('data-visible', 'false');
+  await expect(scrim).toHaveCount(0);
+  await expect(toggle).toBeFocused();
+});
+
+test('FB-03 shell at 768 px with the overlay open is axe-clean', async ({ page }) => {
+  // Light theme is enough per TAS-88 scope; the other axe cases above already
+  // cover dark theme on the non-overlay shell states.
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.setViewportSize({ width: 768, height: 900 });
+  await signInFreshUser(page, 'axe-mobile-overlay');
+
+  await page.getByRole('button', { name: messages.shell.toggleSidebar }).click();
+  await expect(page.locator('#app-sidebar')).toHaveAttribute('data-visible', 'true');
+
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
 test('FB-03 RTL renders without breakage', async ({ page }) => {
