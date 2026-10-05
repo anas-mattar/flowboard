@@ -3,7 +3,13 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    # `scratch/**` is here so a STANDARDS §1.12 red-run proof produces a citable
+    # Actions run (TAS-99, CL-D12). Scratch branches are never a pull request
+    # head, so this never double-runs with the `pull_request` trigger. The two
+    # pull-request-only jobs (`Merge guard`, `Commit messages`) guard themselves
+    # with `if: github.event_name == 'pull_request'` and are skipped on these
+    # pushes; a skipped job is neutral and blocks nothing.
+    branches: [main, 'scratch/**']
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
