@@ -1,20 +1,35 @@
-import { createRoute } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
+import { CreateBoard } from '../components/boards/CreateBoard';
 import { EmptyState } from '../components/primitives/EmptyState';
+import { boardsQueryOptions } from '../hooks/useBoards';
 import { messages } from '../i18n/messages';
 import { authenticatedLayoutRoute } from './authenticated';
 
 /**
- * Board list placeholder (FB-03 spec §3: "FB-03 ships the route with a
- * placeholder outlet"). FB-04 replaces this with the real board list and
- * "Create board" action; the `EmptyState` primitive ships here so FB-04 can
- * reuse it unchanged (BM §5).
+ * `/` (FB-04 spec §4 item 15): redirects to the first board in sidebar
+ * order (starred first, then alphabetical — the order `GET /v1/boards`
+ * already returns, FB-04 §6) when the workspace has one, otherwise renders
+ * the empty-workspace state with the create form focused.
  */
-function IndexPage() {
-  return <EmptyState heading={messages.shell.noBoardsTitle} body={messages.shell.noBoardsBody} />;
-}
-
 export const indexRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: '/',
+  beforeLoad: async ({ context }) => {
+    const boards = await context.queryClient.ensureQueryData(boardsQueryOptions());
+    const firstBoard = boards.items[0];
+    if (firstBoard) {
+      redirect({ to: '/boards/$boardId', params: { boardId: firstBoard.id }, throw: true });
+    }
+  },
   component: IndexPage,
 });
+
+function IndexPage() {
+  return (
+    <EmptyState
+      heading={messages.boards.empty.title}
+      body={messages.boards.empty.body}
+      action={<CreateBoard autoStart />}
+    />
+  );
+}
