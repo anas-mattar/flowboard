@@ -1,3 +1,4 @@
+import { AVATAR_COLORS } from '@flowboard/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DatabaseHandle } from '../src/db/client.js';
 import { SEED_BOARDS, SEED_COUNTS, SEED_USERS } from '../src/db/seed/prototype.js';
@@ -53,6 +54,19 @@ describe('the prototype seed (FS §9, FB-01 §4.8)', () => {
     expect(rows.map((row) => row.name)).toStrictEqual(
       [...SEED_USERS].map((user) => user.displayName).sort((a, b) => a.localeCompare(b)),
     );
+  });
+
+  // TAS-79: the seeded avatars must come from the shared palette, which TAS-74
+  // darkened for WCAG AA 4.5:1 on white `.avatar` text (FS §8).
+  it('gives every seeded user a colour from AVATAR_COLORS', async () => {
+    const rows = await handle.sql<{ color: string }[]>`
+      select avatar_color as color from "user"
+    `;
+
+    expect(rows).toHaveLength(SEED_COUNTS.users);
+    for (const row of rows) {
+      expect(AVATAR_COLORS).toContain(row.color);
+    }
   });
 
   it('creates 3 boards and 11 lists', async () => {
