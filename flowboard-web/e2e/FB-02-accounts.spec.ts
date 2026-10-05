@@ -20,7 +20,8 @@ test('FB-02 signs up and lands signed in', async ({ page }) => {
 
   // Lands on `/` signed in, no intermediate screen (acceptance criterion 13).
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('heading', { name: messages.shell.noBoardsTitle })).toBeVisible();
+  // FB-04 replaces the FB-03 placeholder heading with the real empty-workspace state.
+  await expect(page.getByRole('heading', { name: messages.boards.empty.title })).toBeVisible();
   await expect(page.getByText(user.displayName, { exact: true })).toBeVisible();
 });
 
