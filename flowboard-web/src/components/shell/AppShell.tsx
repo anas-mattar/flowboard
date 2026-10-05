@@ -1,7 +1,7 @@
 import { useRouterState } from '@tanstack/react-router';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { getFocusableElements } from '../primitives/focusable';
+import { getFocusableElements, handleTabTrap } from '../primitives/focusable';
 import { useSidebarCollapse } from '../../hooks/useSidebarCollapse';
 import { useSession } from '../../hooks/useSession';
 import { useShortcut } from '../../hooks/useShortcut';
@@ -97,29 +97,11 @@ export function AppShell({ children, title = messages.shell.boards, titleSlot }:
   // is open (TAS-86 clarification, same wrap logic as `Dialog.tsx`); never
   // wired up at desktop widths.
   function handleSidebarKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
-    if (event.key !== 'Tab') {
-      return;
-    }
     const container = sidebarRef.current;
     if (!container) {
       return;
     }
-    const focusable = getFocusableElements(container);
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-    const active = document.activeElement;
-
-    if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    handleTabTrap(event, container);
   }
 
   const { user, currentWorkspace, workspaces } = session.data;

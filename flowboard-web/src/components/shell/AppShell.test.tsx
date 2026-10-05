@@ -130,11 +130,46 @@ describe('AppShell narrow-viewport overlay (FB-03 spec §5 TAS-86 clarification)
     const userMenuButton = await screen.findByRole('button', { name: messages.shell.userMenu });
     expect(userMenuButton).toHaveFocus();
 
+    // FB-03 ships the sidebar with exactly one focusable control, so the
+    // wrap branches here are a smoke test only (both land back on the same
+    // button either way). The real multi-element wrap logic that TAS-87 F2
+    // asked for is unit-tested directly against 2+ elements in
+    // `../primitives/focusable.test.ts`, since `AppShell` and `Dialog` share
+    // the same `handleTabTrap` helper.
     fireEvent.keyDown(userMenuButton, { key: 'Tab' });
     expect(userMenuButton).toHaveFocus();
 
     fireEvent.keyDown(userMenuButton, { key: 'Tab', shiftKey: true });
     expect(userMenuButton).toHaveFocus();
+  });
+
+  it('one Esc closes only the topmost layer: the footer menu first, the overlay on a second press (TAS-87 F1)', async () => {
+    stubNarrowViewport();
+    const me = makeMeResponse();
+    mockFetchSequence(jsonResponse(200, me));
+
+    renderApp('/');
+    const toggle = await screen.findByRole('button', { name: messages.shell.toggleSidebar });
+    fireEvent.click(toggle);
+
+    const sidebar = screen.getByRole('navigation', { name: messages.app.name });
+    const userMenuButton = await screen.findByRole('button', { name: messages.shell.userMenu });
+    expect(userMenuButton).toHaveFocus();
+
+    fireEvent.click(userMenuButton);
+    const menu = await screen.findByRole('menu', { name: messages.shell.userMenu });
+    expect(menu).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu', { name: messages.shell.userMenu })).not.toBeInTheDocument();
+    expect(sidebar).toHaveAttribute('data-visible', 'true');
+    expect(userMenuButton).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(sidebar).toHaveAttribute('data-visible', 'false');
+    expect(toggle).toHaveFocus();
   });
 });
 
