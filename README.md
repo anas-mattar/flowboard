@@ -26,7 +26,8 @@ This repository is a pnpm monorepo (CL-D9):
 git clone https://github.com/anas-mattar/flowboard.git
 cd flowboard
 
-cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+cp .env.example .env
+set -a; . ./.env; set +a      # export it into the shell: nothing else does, see the note
 pnpm install
 pnpm build                    # required before anything below: see the note
 docker compose up -d          # PostgreSQL 16 on :5432, databases flowboard + flowboard_test
@@ -34,6 +35,24 @@ pnpm db:migrate               # applies the FB-01 schema (17 tables: workspaces,
 pnpm db:seed                  # optional: the three prototype boards, and a demo login it prints
 pnpm dev                      # API on :3000, web app on :5173, run in parallel
 ```
+
+On Windows PowerShell the first two lines are instead:
+
+```powershell
+Copy-Item .env.example .env
+Get-Content .env | Where-Object { $_ -match '^\s*[^#\s]' } | ForEach-Object { $n, $v = $_ -split '=', 2; Set-Item "Env:$n" $v }
+```
+
+Exporting `.env` is not optional either. Nothing in this repository loads it for
+you: there is no `dotenv` dependency, no `--env-file` flag on any `tsx`/`node`
+invocation and no `postinstall` hook. `docker compose up -d` is the one command
+that reads `.env`, and Compose interpolates it for `docker-compose.yml` only — it
+never reaches the shell. Without the export, `pnpm db:migrate` stops at
+`DATABASE_URL is required to run migrations. See .env.example.`, and `db:seed`
+and `dev` fail the same way. This is why
+[`flowboard-web/e2e/README.md`](flowboard-web/e2e/README.md) sets each variable
+by hand rather than relying on `.env`. Re-export in every new terminal, or set
+the variables in your shell profile.
 
 `pnpm build` is not optional in a fresh clone, and it comes **before**
 `pnpm db:migrate`. `@flowboard/shared` publishes itself through package `exports`
@@ -157,8 +176,10 @@ run, and the API log on failure.
 
 ## Environment variables
 
-Every variable is documented in [`.env.example`](.env.example). The API refuses to
-start when a required variable is missing and names it:
+Every variable is documented in [`.env.example`](.env.example). Copying it to
+`.env` is not enough on its own — export it into your shell as the quick-start
+above shows, because nothing in the repository reads `.env` for Node processes.
+The API refuses to start when a required variable is missing and names it:
 
 ```
 Invalid environment configuration: DATABASE_URL is required. See .env.example for every variable.
