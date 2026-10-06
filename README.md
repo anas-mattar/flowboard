@@ -28,10 +28,25 @@ cd flowboard
 
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
 pnpm install
+pnpm build                    # required before anything below: see the note
 docker compose up -d          # PostgreSQL 16 on :5432, databases flowboard + flowboard_test
-pnpm db:migrate               # no migrations yet; FB-01 adds the first ones
-pnpm dev                      # API on :3000, web on :5173, run in parallel
+pnpm db:migrate               # applies the FB-01 schema (17 tables: workspaces, boards, lists, cards, activity, sessions)
+pnpm db:seed                  # optional: the three prototype boards, and a demo login it prints
+pnpm dev                      # API on :3000, web app on :5173, run in parallel
 ```
+
+`pnpm build` is not optional in a fresh clone, and it comes **before**
+`pnpm db:migrate`. `@flowboard/shared` publishes itself through package `exports`
+→ `dist/index.js`, and nothing builds it on `pnpm install`. Until it exists, every
+command that loads the API or the web app — `db:migrate`, `db:seed` and `dev`
+alike — dies with `ERR_MODULE_NOT_FOUND … @flowboard/shared/dist/index.js`. This
+is the same reason `pnpm lint` builds the package first (see below).
+
+`pnpm db:seed` prints the workspace id, the row counts and the address and
+password to sign in with. That password is a documented non-secret throwaway for
+a local database, on the same footing as the local Postgres password below
+(STANDARDS §1.5) — read it from the command's own output rather than copying it
+anywhere.
 
 Check the API and the web app:
 
@@ -40,9 +55,12 @@ curl http://localhost:3000/v1/health
 # {"status":"ok","version":"0.1.0"}
 
 curl http://localhost:3000/v1/openapi.json
-
-open http://localhost:5173   # placeholder page, "FlowBoard"
 ```
+
+Then open <http://localhost:5173> in a browser. Signed out, every route redirects
+to the sign-in page (FB-02); sign up and you land in the app shell (FB-03) on your
+first board, or on the empty-workspace state with the create-board form focused
+when the workspace has no boards yet (FB-04).
 
 ### Ports and databases
 
@@ -64,14 +82,14 @@ recreates both databases on the next `docker compose up -d`.
 
 ## Running the checks
 
-| Command                 | What it runs                                                             |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `pnpm lint`             | Builds `@flowboard/shared`, then ESLint (zero warnings) and Prettier     |
-| `pnpm typecheck`        | `tsc` across every package with the strict shared base config            |
-| `pnpm test`             | Vitest unit tests (pure logic, no database)                              |
-| `pnpm test:integration` | Vitest integration tests against `flowboard_test` (needs Docker running) |
-| `pnpm test:e2e`         | Playwright end-to-end tests (added with `flowboard-web`)                 |
-| `pnpm build`            | Builds every package                                                     |
+| Command                 | What it runs                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `pnpm lint`             | Builds `@flowboard/shared`, then ESLint (zero warnings), Prettier and Stylelint |
+| `pnpm typecheck`        | `tsc` across every package with the strict shared base config                   |
+| `pnpm test`             | Vitest unit tests (pure logic, no database)                                     |
+| `pnpm test:integration` | Vitest integration tests against `flowboard_test` (needs Docker running)        |
+| `pnpm test:e2e`         | Playwright end-to-end tests (needs a running API — see below)                   |
+| `pnpm build`            | Builds every package                                                            |
 
 `pnpm lint` builds `@flowboard/shared` first on purpose. The ESLint config is
 type-aware (`recommendedTypeChecked` with `projectService`), and `@flowboard/shared`
@@ -84,32 +102,58 @@ without its own step.
 CI runs all of the above plus `pnpm audit --audit-level high` and gitleaks secret
 scanning on every pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
+### Running the Playwright suites
+
+`pnpm test:e2e` needs more setup than the other checks, because
+`playwright.config.ts`'s `webServer` starts only the Vite dev server — you run
+`flowboard-api` yourself, against the isolated `flowboard_test` database rather
+than your dev one. The full instructions live in
+[`flowboard-web/e2e/README.md`](flowboard-web/e2e/README.md) and are not repeated
+here. It covers:
+
+- pointing `DATABASE_URL` at `flowboard_test`, then migrating, seeding, building
+  and starting the API;
+- `RATE_LIMIT_DISABLED=true`, without which the suite's own signup fixtures trip
+  the per-IP auth rate limiter (CL-E11) and fail as `429 rate_limited`;
+- the per-agent `WEB_PORT` / `API_PORT` pair (defaults `5173` / `3000`) that lets
+  several people run the suite on one box, and the `WEB_ORIGIN` that must move
+  with `WEB_PORT` or every mutation 403s;
+- the `chromium-x01` / `firefox-x01` / `webkit-x01` projects, which run X-01's
+  200 ms toast-latency assertion (FS X-01, FB-04 AC10) serialized and with
+  `retries: 0`, so a marginal miss fails instead of being retried green.
+
 ### Verification
 
-Every FB-00 acceptance criterion is proven by a named job in
+MVP-1 (FB-00 to FB-04) is proven by named jobs in
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) rather than by a local run that
-nobody else can see:
+nobody else can see. The job names below are the checks that appear on a pull request:
 
-| What is proven                                                                                         | Job                                  |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------ |
-| Lint, formatting, strict typecheck, unit tests, build                                                  | `lint`, `typecheck`, `unit`, `build` |
-| Conventional Commits on the pull request range                                                         | `commitlint`                         |
-| Integration tests against a real PostgreSQL 16                                                         | `integration`                        |
-| **AC 5** — `docker compose up -d` creates both `flowboard` and `flowboard_test` (CL-E21)               | **`compose-smoke`**                  |
-| **AC 6 (Playwright smoke part)** and **AC 7** — axe-core has zero violations on `/`, in light and dark | **`playwright`**                     |
-| No high-severity advisories, no committed secrets                                                      | `audit`, `secret-scan`               |
+| What is proven                                                                                                                        | Job                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Lint, formatting, strict typecheck, unit tests, build                                                                                 | `Lint`, `Typecheck`, `Unit tests`, `Build` |
+| Conventional Commits on the pull request range                                                                                        | `Commit messages`                          |
+| No scratch branch or flagged title can be merged into `main` (STANDARDS §1.12)                                                        | `Merge guard`                              |
+| The FB-01 schema and the API against a real PostgreSQL 16                                                                             | `Integration tests`                        |
+| `docker compose up -d` creates both `flowboard` and `flowboard_test` (CL-E21)                                                         | `Docker Compose smoke`                     |
+| **FB-00 to FB-04 end to end** — every `e2e/` suite on three browser engines, against the built API and a migrated and seeded database | **`Playwright smoke`**                     |
+| No high-severity advisories, no committed secrets                                                                                     | `Dependency audit`, `Secret scanning`      |
 
-`compose-smoke` runs the committed `docker-compose.yml` on a GitHub-hosted runner with
-the `.env.example` values, queries `pg_database` for both database names, runs
+`Docker Compose smoke` runs the committed `docker-compose.yml` on a GitHub-hosted runner
+with the `.env.example` values, queries `pg_database` for both database names, runs
 `pnpm test:integration` against the compose-started `flowboard_test`, and tears the
-stack down with `docker compose down -v`. Unlike `integration`, which uses a GitHub
+stack down with `docker compose down -v`. Unlike `Integration tests`, which uses a GitHub
 service container, it exercises `docker/postgres/init/` end to end — so the init script
 that creates `flowboard_test` cannot silently rot.
 
-`playwright` installs Chromium, starts the `flowboard-web` Vite dev server and runs
-`flowboard-web/e2e/FB-00-foundation.spec.ts`, which asserts the placeholder renders and
-that `@axe-core/playwright` reports zero violations on `/`, once with
-`prefers-color-scheme: light` and once with `dark`.
+`Playwright smoke` is the end-to-end gate for the whole of MVP-1, not just FB-00. It
+runs `pnpm build`, `pnpm db:migrate` and `pnpm db:seed`, starts the built API, waits for
+`GET /v1/health` to return `ok` — so a suite can never quietly run against a dead proxy —
+and only then runs `pnpm test:e2e` across Chromium, Firefox and WebKit (FB-03 spec
+acceptance criterion 11). That covers every suite in
+[`flowboard-web/e2e/`](flowboard-web/e2e/): FB-00 foundation and axe-core on `/` in light
+and dark, FB-02 accounts, FB-03 shell, FB-04 boards, and the `MVP-1-first-board`
+sign-up-to-first-board slice. The Playwright report is uploaded as an artifact on every
+run, and the API log on failure.
 
 ## Environment variables
 
