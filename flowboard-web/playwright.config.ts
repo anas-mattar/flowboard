@@ -14,9 +14,14 @@ const API_PORT = Number(process.env['API_PORT'] ?? 3000);
 // X-01's 200ms toast-latency budget (FS X-01, FB-04 AC10) is a spec
 // assertion, not a flaky network call: a CI retry that happens to land
 // under budget would mask a real regression (TAS-106, TAS-23 both saw a
-// retried pass hide a 228ms/229ms miss on firefox). Route it to its own
-// per-browser projects with retries: 0 so a marginal miss fails the job
-// outright instead of being rescued by the suite-wide CI retry count.
+// retried pass hide a 228ms/229ms miss on firefox). Frontend's TAS-107 A/B
+// (36 runs/engine, with and without the product fix) found an identical
+// 30/36 pass rate either way, isolating the misses to three browser
+// engines contending for CPU on one runner, not product code (TAS-112
+// scope amendment, AC5). Route X-01 to its own per-browser projects with
+// workers: 1 (serialized, so it never contends with itself or the other
+// two X-01 projects for CPU) and retries: 0 (so a miss fails the job
+// outright); the rest of the suite keeps running fullyParallel.
 const X01_TITLE = /X-01/;
 
 export default defineConfig({
@@ -36,18 +41,21 @@ export default defineConfig({
     {
       name: 'chromium-x01',
       grep: X01_TITLE,
+      workers: 1,
       retries: 0,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox-x01',
       grep: X01_TITLE,
+      workers: 1,
       retries: 0,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit-x01',
       grep: X01_TITLE,
+      workers: 1,
       retries: 0,
       use: { ...devices['Desktop Safari'] },
     },
