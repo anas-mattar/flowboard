@@ -37,7 +37,11 @@
     "typescript-eslint": "8.71.0",
     "vitest": "3.2.7"
   },
+  "//pnpm.overrides.tinypool": "GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr (critical): prototype-pollution gadget to RCE in tinypool worker/run options, patched in 2.1.2. vitest 3.2.7 pins tinypool ^1.1.1 and there is no patched 1.x backport, so the fix has to come through an override. Remove this override once vitest is upgraded to a release that depends on tinypool >=2.1.2.",
   "pnpm": {
+    "overrides": {
+      "tinypool": "^2.1.2"
+    },
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-vfj7-8cjw-p6xm"
