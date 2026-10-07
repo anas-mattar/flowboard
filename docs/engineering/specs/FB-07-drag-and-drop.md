@@ -1,6 +1,6 @@
 **Backlog item:** FB-07 Drag and drop
-**Status:** Ready for approval
-**Approved by:** pending (Paperclip issue TAS-126, Wave-1 confirmation card per CL-D24; independent review by FlowBoard QA)
+**Status:** Approved
+**Approved by:** Anas, 7 October 2026 (Paperclip issue TAS-126, Wave-1 confirmation card accepted at 09:42 UTC per CL-D24; independent review TAS-128 and TAS-129)
 **Owner(s):** FlowBoard Frontend (`flowboard-web` dnd-kit integration, sensors, announcements, optimistic moves, rollback), FlowBoard Backend (`flowboard-api` inline re-balance in the card and list move paths, CL-E36, plus the FS §5.1 integration test), FlowBoard QA (`flowboard-web/e2e/FB-07-drag-and-drop.spec.ts`, the baseline drag trace and the screen-reader pass, in a separate task after the Frontend task)
 **Reviewer:** cross-assigned per pull request among FlowBoard Backend, Frontend and QA; never the author (STANDARDS §1.9)
 **Increment:** MVP-2
@@ -157,4 +157,4 @@ The API rows are those of FB-05 §8 and FB-06 §8 and are covered by `lists.matr
 
 ### 12. Open questions
 
-None requiring a business decision. The engineering decisions this specification relies on are CL-E36 (inline re-balance instead of a background job while there is one API instance and no job runner) and CL-E42 (keyboard grammar and announcement wording), both in `CLARIFICATIONS.md` §3.4 and confirmed by the Wave-1 card (CL-D24). One point for Anas's attention on that card: the announcement sentences in AC 5 are user-facing copy; they can be reworded later as catalogue strings without code changes.
+None requiring a business decision. The engineering decisions this specification relies on are CL-E36 (inline re-balance instead of a background job while there is one API instance and no job runner) and CL-E42 (keyboard grammar and announcement wording), both in `CLARIFICATIONS.md` §3.4 and confirmed by the Wave-1 card (CL-D24), accepted on 7 October 2026. The point raised on that card, the announcement wording of AC 5 (CL-E42), was accepted as recommended; the sentences are user-facing copy and can be reworded later as catalogue strings without code changes.

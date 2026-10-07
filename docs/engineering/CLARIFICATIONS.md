@@ -191,7 +191,7 @@ Plan §9.5 listed readings E-a to E-j as inside the approved scope and stack; An
 
 ### 3.4 Engineering decisions for the Wave-1 specifications (7 October 2026, TAS-126)
 
-These decisions were needed to write the FB-05, FB-06 and FB-07 specifications. They are engineering choices inside the scope Anas approved (CL-D1, CL-D4, CL-D9, CL-D17, CL-A2, CL-A13, CL-A14, CL-E2, CL-E23, CL-E24, CL-E26, CL-E32), not business decisions. They become binding when Anas accepts the Wave-1 specification card on Paperclip issue TAS-126 (CL-D24); a later change needs a superseding entry per §5. Each cites the specification that depends on it.
+These decisions were needed to write the FB-05, FB-06 and FB-07 specifications. They are engineering choices inside the scope Anas approved (CL-D1, CL-D4, CL-D9, CL-D17, CL-A2, CL-A13, CL-A14, CL-E2, CL-E23, CL-E24, CL-E26, CL-E32), not business decisions. Anas accepted the Wave-1 specification card on Paperclip issue TAS-126 on 7 October 2026 at 09:42 UTC (CL-D24), including the four points raised on it (CL-E33, CL-E37, CL-E40, CL-E42), so they are **Recorded** and binding; a later change needs a superseding entry per §5. Each cites the specification that depends on it.
 
 | ID | Topic | Resolves | Decision | Consequence | Spec |
 |---|---|---|---|---|---|
