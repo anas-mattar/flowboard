@@ -26,8 +26,10 @@ let handle: DatabaseHandle;
 let app: FastifyInstance;
 let cookie: string;
 let token: string;
-/** A board owned by the matrix account, for the `{id}` routes. */
+/** A board owned by the matrix account, for the board `{id}` routes. */
 let boardId: string;
+/** A list on that board, for the FB-05 list `{id}` routes. */
+let listId: string;
 
 const account = {
   email: 'matrix@example.test',
@@ -36,8 +38,10 @@ const account = {
 };
 
 interface RouteCase {
-  readonly method: 'GET' | 'POST' | 'PATCH';
+  readonly method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   readonly url: string;
+  /** Which fixture id `{id}` stands for in this row. Defaults to the board. */
+  readonly idFixture?: 'board' | 'list';
   /** Status for a caller with a valid session. */
   readonly authenticated: number;
   /** Status for a caller with no credentials. */
@@ -92,6 +96,44 @@ const ROUTES: readonly RouteCase[] = [
     anonymous: 401,
     payload: { name: 'Matrix renamed' },
   },
+  // FB-05. The list routes carry a list id, so `{id}` resolves to the fixture
+  // list created on the matrix board rather than to the board itself.
+  {
+    method: 'POST',
+    url: '/v1/boards/{id}/lists',
+    authenticated: 201,
+    anonymous: 401,
+    payload: { name: 'Matrix list' },
+  },
+  {
+    method: 'PATCH',
+    url: '/v1/lists/{id}',
+    idFixture: 'list',
+    authenticated: 200,
+    anonymous: 401,
+    payload: { name: 'Matrix list renamed' },
+  },
+  {
+    method: 'DELETE',
+    url: '/v1/lists/{id}',
+    idFixture: 'list',
+    authenticated: 204,
+    anonymous: 401,
+  },
+  {
+    method: 'POST',
+    url: '/v1/lists/{id}/archive-cards',
+    idFixture: 'list',
+    authenticated: 200,
+    anonymous: 401,
+  },
+  {
+    method: 'POST',
+    url: '/v1/lists/{id}/sort-by-due',
+    idFixture: 'list',
+    authenticated: 200,
+    anonymous: 401,
+  },
 ];
 
 beforeAll(async () => {
@@ -128,6 +170,14 @@ beforeEach(async () => {
     ...withSessionCookie(cookie),
   });
   boardId = board.json<{ board: { id: string } }>().board.id;
+
+  const list = await app.inject({
+    method: 'POST',
+    url: `/v1/boards/${boardId}/lists`,
+    payload: { name: 'Matrix fixture list' },
+    ...withSessionCookie(cookie),
+  });
+  listId = list.json<{ id: string }>().id;
 });
 
 function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'headers'> = {}) {
@@ -137,7 +187,7 @@ function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'header
     method: route.method,
     // The table carries the OpenAPI path so the completeness check can compare
     // it directly; the request needs a real id.
-    url: route.url.replace('{id}', boardId),
+    url: route.url.replace('{id}', route.idFixture === 'list' ? listId : boardId),
     ...(payload === undefined ? {} : { payload }),
     ...auth,
   });

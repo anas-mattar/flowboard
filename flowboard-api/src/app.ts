@@ -19,6 +19,7 @@ import { createDatabase, type DatabaseHandle } from './db/client.js';
 import { authRoutes } from './routes/auth.js';
 import { boardRoutes } from './routes/boards.js';
 import { healthRoutes } from './routes/health.js';
+import { listRoutes } from './routes/lists.js';
 import { meRoutes } from './routes/me.js';
 import { API_PACKAGE_VERSION } from './version.js';
 
@@ -162,6 +163,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
         { name: 'auth', description: 'Signup, login and logout (FB-02)' },
         { name: 'me', description: 'The signed-in user (FB-02)' },
         { name: 'boards', description: 'Boards, their lists and cards (FB-04)' },
+        { name: 'lists', description: 'Lists on a board: order, WIP limit, archive (FB-05)' },
       ],
     },
     transform: jsonSchemaTransform,
@@ -175,6 +177,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}): Promise
       await versioned.register(authRoutes(dependencies));
       await versioned.register(meRoutes(dependencies));
       await versioned.register(boardRoutes(dependencies));
+      await versioned.register(listRoutes(dependencies));
     },
     { prefix: `/${API_VERSION}` },
   );

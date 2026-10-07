@@ -23,6 +23,14 @@ export {
   rebalance,
 } from './position.js';
 
+export {
+  compareByDue,
+  sortByDue,
+  sortByDueWithMoves,
+  type SortByDueResult,
+  type SortableByDue,
+} from './sort-by-due.js';
+
 export { healthResponseSchema, type HealthResponse } from './schemas/health.js';
 export {
   apiErrorSchema,
@@ -125,6 +133,37 @@ export {
   type CardSummary,
   type ListWithCards,
 } from './schemas/board.js';
+
+export {
+  listArchiveCardsResultSchema,
+  listCreateSchema,
+  listIdParamsSchema,
+  listNameFieldSchema,
+  listPatchSchema,
+  listPositionFieldSchema,
+  listSortByDueResultSchema,
+  wipLimitFieldSchema,
+  LIST_NAME_MAX_LENGTH,
+  WIP_LIMIT_MAX,
+  type ListArchiveCardsResult,
+  type ListCreate,
+  type ListIdParams,
+  type ListPatch,
+  type ListSortByDueResult,
+} from './schemas/list.js';
+
+export {
+  cardArchivedPayloadSchema,
+  cardArchivedViaSchema,
+  cardMovedPayloadSchema,
+  cardMovedViaSchema,
+  CARD_ARCHIVED_VIA,
+  CARD_MOVED_VIA,
+  type CardArchivedPayload,
+  type CardArchivedVia,
+  type CardMovedPayload,
+  type CardMovedVia,
+} from './schemas/activity.js';
 
 export {
   meResponseSchema,

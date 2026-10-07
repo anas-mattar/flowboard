@@ -166,7 +166,7 @@ Pagination: none (no list endpoint added). `If-Match` behaviour: CL-E23; `positi
 
 ### 7. Data changes
 
-No schema change. FB-01 created `list` (`position`, `wip_limit` with `list_wip_limit_check`, `archived_at`) and `card` with `card_list_active_idx (list_id, position) where archived_at is null`, which serves the archive, sort and count queries. Hydration (FB-04) must order lists and cards by `(position, id)`; if the FB-04 query orders by `position` alone, FB-05's backend task changes the `ORDER BY` and records it here. Soft delete only (`archived_at`); activity is insert-only (STANDARDS §1.3).
+No schema change. FB-01 created `list` (`position`, `wip_limit` with `list_wip_limit_check`, `archived_at`) and `card` with `card_list_active_idx (list_id, position) where archived_at is null`, which serves the archive, sort and count queries. Hydration (FB-04) must order lists and cards by `(position, id)`; if the FB-04 query orders by `position` alone, FB-05's backend task changes the `ORDER BY` and records it here. **Checked in TAS-139: no change was needed.** `hydrateBoard` already orders lists by `(position, id)` and cards by `(list_id, position, id)`, so the AC 3 tie — two lists deliberately sharing a position — resolves deterministically and the `lists.patch` test asserts that two consecutive hydrations return the same order. Soft delete only (`archived_at`); activity is insert-only (STANDARDS §1.3).
 
 Seed: unchanged. The prototype seed already has lists with WIP limits and over-limit counts (Design 3 with 4 cards on Product Roadmap Q3) that AC 12 uses.
 
