@@ -1,6 +1,6 @@
 import type { ActivityEventType } from '@flowboard/shared';
 import { desc, eq } from 'drizzle-orm';
-import type { DatabaseHandle } from '../db/client.js';
+import type { DatabaseHandle, DbExecutor } from '../db/client.js';
 import { newId } from '../db/id.js';
 import { activityEventTable, type ActivityEventRow } from '../db/schema/activity-event.js';
 
@@ -32,12 +32,24 @@ export interface NewActivityEvent {
   readonly payload?: Record<string, unknown>;
 }
 
+/**
+ * Either kind of handle a caller may hold: the standalone `DatabaseHandle` the
+ * FB-01 tests use, or the executor a route is already inside a transaction
+ * with. FB-05 archives a list and writes one event per card atomically, which
+ * needs the latter.
+ */
+type ActivityExecutor = DatabaseHandle | DbExecutor;
+
+function executorOf(handle: ActivityExecutor): DbExecutor {
+  return 'db' in handle ? handle.db : handle;
+}
+
 /** Appends one activity event and returns the stored row. */
 export async function appendActivityEvent(
-  handle: DatabaseHandle,
+  handle: ActivityExecutor,
   event: NewActivityEvent,
 ): Promise<ActivityEventRow> {
-  const [row] = await handle.db
+  const [row] = await executorOf(handle)
     .insert(activityEventTable)
     .values({
       id: newId(),
@@ -53,6 +65,34 @@ export async function appendActivityEvent(
   }
 
   return row;
+}
+
+/**
+ * Appends a batch of events in one statement (FS §5.2). Archiving a list of
+ * 200 cards writes 200 events; as separate inserts that is 200 round trips
+ * inside the transaction holding the row locks.
+ *
+ * An empty batch is a no-op rather than an empty `INSERT`, because a sort that
+ * changed nothing legitimately has no events to write (CL-A14).
+ */
+export async function appendActivityEvents(
+  handle: ActivityExecutor,
+  events: readonly NewActivityEvent[],
+): Promise<ActivityEventRow[]> {
+  if (events.length === 0) return [];
+
+  return executorOf(handle)
+    .insert(activityEventTable)
+    .values(
+      events.map((event) => ({
+        id: newId(),
+        cardId: event.cardId,
+        actorId: event.actorId,
+        type: event.type,
+        payload: event.payload ?? {},
+      })),
+    )
+    .returning();
 }
 
 /** The activity feed for one card, newest first (C-12). */

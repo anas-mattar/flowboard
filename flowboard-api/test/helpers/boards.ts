@@ -128,14 +128,21 @@ export async function insertList(
 export async function insertCard(
   handle: DatabaseHandle,
   listId: string,
-  options: { title: string; position: number; createdBy: string; archived?: boolean },
+  options: {
+    title: string;
+    position: number;
+    createdBy: string;
+    archived?: boolean;
+    /** UTC ISO 8601, as `seed.ts` passes it; omitted means no due date (FB-05). */
+    dueAt?: string | null;
+  },
 ): Promise<string> {
   const id = newId();
 
   await handle.sql`
-    insert into card (id, list_id, title, position, created_by, archived_at)
+    insert into card (id, list_id, title, position, created_by, archived_at, due_at)
     values (${id}, ${listId}, ${options.title}, ${options.position}, ${options.createdBy},
-            ${archivedAt(options.archived)})
+            ${archivedAt(options.archived)}, ${options.dueAt ?? null})
   `;
 
   return id;
