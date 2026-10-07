@@ -73,9 +73,9 @@ Three packages in one pnpm monorepo. The web app and the API never share code di
 
 ### 2.6 Scheduled jobs
 
-- **Position re-balance:** when the gap between neighbouring positions in a list falls below a threshold, a job rewrites that list's positions with even spacing (FS §5.1). It is the only code path that updates positions it did not receive from a user action.
+- **Position re-balance is not a job** (amended 7 October 2026, CL-E36). FS §5.1 describes a background job; in MVP-2 the re-balance runs inline in the move transaction instead: when a move writes a position and the gap to a neighbour falls below the minimum, the same transaction rewrites that container's positions with even spacing while holding the container row with `SELECT … FOR UPDATE`. It remains the only code path that updates positions it did not receive from a user action. A job runner can take this over at FB-16 without changing semantics (FB-07 specifies and tests it).
 - **Archive purge:** physically deletes rows whose `archived_at` is older than the retention constant (CL-A6). Written before launch, not in MVP-1 (FB-17).
-- Jobs run in the API process on a timer in MVP; a separate worker is a launch-readiness concern.
+- Jobs (the archive purge) run in the API process on a timer in MVP; a separate worker is a launch-readiness concern.
 
 ---
 
@@ -110,7 +110,7 @@ Conventions that apply to every table: UUID v7 primary keys, `created_at` and `u
 
 ### 3.1 Ordering with sparse floats (FS §5.1)
 
-Positions are double-precision floats. A new item at the end takes `last + 1024`. A drop between neighbours takes their midpoint. When a midpoint would fall within a minimum gap of its neighbours, the move still succeeds and the re-balance job is scheduled for that container. The position module in `flowboard-shared` is pure, unit-tested, and shared by the API (persisting) and the web app (optimistic placement).
+Positions are double-precision floats. A new item at the end takes `last + 1024`. A drop between neighbours takes their midpoint. When a midpoint would fall within a minimum gap of its neighbours, the move still succeeds and the same transaction re-balances that container inline (CL-E36; §2.6). Re-balanced neighbours write no activity events but do bump `updated_at`. The position module in `flowboard-shared` is pure, unit-tested, and shared by the API (persisting) and the web app (optimistic placement).
 
 ### 3.2 Soft delete and retention
 
