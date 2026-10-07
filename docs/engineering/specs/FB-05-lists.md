@@ -1,6 +1,6 @@
 **Backlog item:** FB-05 Lists
-**Status:** Ready for approval
-**Approved by:** pending (Paperclip issue TAS-126, Wave-1 confirmation card per CL-D24; independent review by FlowBoard QA)
+**Status:** Approved
+**Approved by:** Anas, 7 October 2026 (Paperclip issue TAS-126, Wave-1 confirmation card accepted at 09:42 UTC per CL-D24; independent review TAS-128 and TAS-129)
 **Owner(s):** FlowBoard Backend (`flowboard-api` list routes, `flowboard-shared` list schemas), FlowBoard Frontend (`flowboard-web` add-list form, list header editing, list menu, WIP popover, confirmations), FlowBoard QA (`flowboard-web/e2e/FB-05-lists.spec.ts`, in a separate task after the Frontend task)
 **Reviewer:** cross-assigned per pull request among FlowBoard Backend, Frontend and QA; never the author (STANDARDS §1.9)
 **Increment:** MVP-2
@@ -211,4 +211,4 @@ Covered by `flowboard-api/test/lists.matrix.test.ts`, written in the FB-04 style
 
 ### 12. Open questions
 
-None requiring a business decision. The engineering decisions this specification relies on are CL-E33 to CL-E35 (`CLARIFICATIONS.md` §3.4) and are confirmed by the Wave-1 card (CL-D24). One point for Anas's attention on that card: the WIP limit upper bound of 999 (CL-E33) is an engineering guard with no FS source; any positive bound is acceptable and changing it is a one-constant change.
+None requiring a business decision. The engineering decisions this specification relies on are CL-E33 to CL-E35 (`CLARIFICATIONS.md` §3.4) and were confirmed by the Wave-1 card (CL-D24), accepted on 7 October 2026. The point raised on that card, the WIP limit upper bound of 999 (CL-E33), was accepted as recommended; it is an engineering guard with no FS source and changing it is a one-constant change.

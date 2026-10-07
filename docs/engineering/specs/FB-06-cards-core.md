@@ -1,6 +1,6 @@
 **Backlog item:** FB-06 Cards core
-**Status:** Ready for approval
-**Approved by:** pending (Paperclip issue TAS-126, Wave-1 confirmation card per CL-D24; independent review by FlowBoard QA)
+**Status:** Approved
+**Approved by:** Anas, 7 October 2026 (Paperclip issue TAS-126, Wave-1 confirmation card accepted at 09:42 UTC per CL-D24; independent review TAS-128 and TAS-129)
 **Owner(s):** FlowBoard Backend (`flowboard-api` card routes, activity feed route, `flowboard-shared` card and activity schemas, Markdown-free storage), FlowBoard Frontend (`flowboard-web` card composer, card front, card detail modal route, title and description editing, Move picker, Copy, Delete, activity feed, Markdown rendering), FlowBoard QA (`flowboard-web/e2e/FB-06-cards.spec.ts` and the MVP-2 slice test `MVP-2-first-card.spec.ts`, in a separate task after the Frontend task)
 **Reviewer:** cross-assigned per pull request among FlowBoard Backend, Frontend and QA; never the author (STANDARDS §1.9)
 **Increment:** MVP-2
@@ -245,7 +245,7 @@ Covered by `flowboard-api/test/cards.matrix.test.ts` from this table (CL-E29); F
 
 ### 12. Open questions
 
-None requiring a business decision beyond those already answered (CL-D17 for the description format, CL-A13 for copy). Two points for Anas's attention on the Wave-1 card, each an engineering choice inside approved scope recorded in `CLARIFICATIONS.md` §3.4:
+None requiring a business decision beyond those already answered (CL-D17 for the description format, CL-A13 for copy). Two points were put to Anas on the Wave-1 card, each an engineering choice inside approved scope recorded in `CLARIFICATIONS.md` §3.4, and both were accepted as recommended on 7 October 2026:
 
-- **CL-E40** writes the funnel event `card.created` in FB-06 rather than waiting for FB-18, the same way CL-A19 moved the invitation events into FB-09. Recommendation: accept; it costs one insert and makes the BM §9 activation metric measurable from the first MVP-2 build.
-- **CL-E37** adds `micromark` as the one Markdown renderer. Recommendation: accept; it is a small CommonMark-compliant dependency whose default output is HTML-escaped, and the alternative (a hand-written parser) is a larger security risk.
+- **CL-E40** writes the funnel event `card.created` in FB-06 rather than waiting for FB-18, the same way CL-A19 moved the invitation events into FB-09. It costs one insert and makes the BM §9 activation metric measurable from the first MVP-2 build.
+- **CL-E37** adds `micromark` as the one Markdown renderer. It is a small CommonMark-compliant dependency whose default output is HTML-escaped; the alternative (a hand-written parser) was a larger security risk.
