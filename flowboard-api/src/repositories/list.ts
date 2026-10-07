@@ -15,7 +15,6 @@ import {
   cardTable,
   listTable,
   workspaceMemberTable,
-  type BoardRow,
   type ListRow,
 } from '../db/schema/index.js';
 import { appendActivityEvents } from './activity-event.js';
