@@ -101,8 +101,8 @@ recreates both databases on the next `docker compose up -d`.
 
 The container starts PostgreSQL with `fsync`, `synchronous_commit` and
 `full_page_writes` off (the `command:` in `docker-compose.yml`). Every
-integration test truncates all tables, and with `fsync` on each truncate costs
-seconds on a Docker volume, so the local suite took over an hour. The trade is
+integration test truncates all tables, and skipping the flush on each one makes
+the local suite about a quarter faster on a Docker volume. The trade is
 durability: if the host loses power mid-write the local data can be corrupt,
 which is why these flags belong only on this throwaway database. Recover with
 the `down -v` / `up -d` pair above. CI's `Integration tests` job uses a GitHub
