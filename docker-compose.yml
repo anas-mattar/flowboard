@@ -5,6 +5,19 @@ services:
     image: postgres:16.10-alpine
     container_name: flowboard-postgres
     restart: unless-stopped
+    # Throwaway database, so durability is traded for speed (TAS-154): every
+    # integration test truncates all tables, and with fsync on one truncate costs
+    # about 3.5 s on a Docker volume. If the host crashes, `docker compose down -v`
+    # and `docker compose up -d` rebuild both databases. Never copy these flags
+    # to a database that holds data anyone wants to keep.
+    command:
+      - postgres
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
     environment:
       POSTGRES_DB: flowboard
       POSTGRES_USER: flowboard
