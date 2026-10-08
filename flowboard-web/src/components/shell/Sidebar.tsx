@@ -64,7 +64,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           <span className="sidebar__who-name">{displayName}</span>
           <small className="sidebar__who-role">{roleLabel}</small>
         </span>
-        <UserMenu theme={theme} onThemeChange={onThemeChange} onSignOut={onSignOut} />
+        <UserMenu
+          theme={theme}
+          onThemeChange={onThemeChange}
+          onSignOut={onSignOut}
+          visible={visible}
+        />
       </div>
     </nav>
   );
