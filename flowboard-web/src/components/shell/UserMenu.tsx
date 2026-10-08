@@ -10,16 +10,32 @@ export interface UserMenuProps {
   theme: UserTheme;
   onThemeChange: (theme: UserTheme) => void;
   onSignOut: () => void;
+  /**
+   * Whether the sidebar footer housing this menu is currently visible
+   * (TAS-94): the sidebar renders unconditionally, with `visible` a CSS-only
+   * concern, so a hidden footer must still close its own popover and drop
+   * its Esc-stack token. Without this, closing the narrow-viewport overlay
+   * while the menu is open leaves the menu's token registered, and
+   * reopening the overlay re-pushes the shell's token above it — inverting
+   * which layer Esc closes first.
+   */
+  visible: boolean;
 }
 
 /**
  * Sidebar footer menu (FS §4.1, FB-03 spec §5): a `menu` with arrow-key
  * navigation holding the theme radio group and Sign out.
  */
-export function UserMenu({ theme, onThemeChange, onSignOut }: UserMenuProps) {
+export function UserMenu({ theme, onThemeChange, onSignOut, visible }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      setOpen(false);
+    }
+  }, [visible]);
 
   useShortcut(
     'Escape',

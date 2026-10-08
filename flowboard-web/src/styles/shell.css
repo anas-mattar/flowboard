@@ -336,6 +336,20 @@
   .sidebar[data-visible='true'] {
     margin-inline-start: 0;
   }
+
+  /*
+   * `.topbar` is explicitly `grid-column: 2`, but column 1 has no
+   * participating grid item once `.sidebar` goes `position: fixed` above, so
+   * the "auto" track collapses to 0 and the topbar (and its ☰ toggle) starts
+   * at the same inline-start edge the overlay sidebar covers. Without a
+   * higher stacking order here the toggle is visually covered and
+   * unclickable while the overlay is open (TAS-94): a real pointer click at
+   * its coordinates lands on the sidebar instead.
+   */
+  .topbar {
+    position: relative;
+    z-index: 21;
+  }
 }
 
 @media (width <= 768px) and (prefers-reduced-motion: reduce) {

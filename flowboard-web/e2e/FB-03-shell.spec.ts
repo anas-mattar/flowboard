@@ -289,6 +289,41 @@ test('FB-03 tab order at 768 px with the overlay sidebar open', async ({ page })
   await expect(toggle).toBeFocused();
 });
 
+test('FB-03 Esc closes the footer menu first even after the overlay closes and reopens while it was open (TAS-94, TAS-92 N1)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await signInFreshUser(page, 'overlay-menu-esc-stack');
+
+  const toggle = page.getByRole('button', { name: messages.shell.toggleSidebar });
+  const sidebar = page.locator('#app-sidebar');
+  const userMenuButton = page.getByRole('button', { name: messages.shell.userMenu });
+
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute('data-visible', 'true');
+
+  await userMenuButton.click();
+  await expect(page.getByRole('menu', { name: messages.shell.userMenu })).toBeVisible();
+
+  // Dismiss the overlay (not via Esc) while the footer menu is still open —
+  // the reviewer's repro. The menu is not visible during the gap, so it must
+  // not still be "open" underneath when the overlay reopens.
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute('data-visible', 'false');
+
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute('data-visible', 'true');
+  await expect(page.getByRole('menu', { name: messages.shell.userMenu })).toHaveCount(0);
+  await expect(userMenuButton).not.toHaveAttribute('aria-expanded', 'true');
+
+  // One Esc now closes the overlay (the only open layer) and returns focus
+  // to ☰, rather than needing a second press because a stale menu layer was
+  // still on top of the Esc stack.
+  await page.keyboard.press('Escape');
+  await expect(sidebar).toHaveAttribute('data-visible', 'false');
+  await expect(toggle).toBeFocused();
+});
+
 test('FB-03 shell at 768 px with the overlay open is axe-clean', async ({ page }) => {
   // Light theme is enough per TAS-88 scope; the other axe cases above already
   // cover dark theme on the non-overlay shell states.

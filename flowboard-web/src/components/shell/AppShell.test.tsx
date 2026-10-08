@@ -179,6 +179,41 @@ describe('AppShell narrow-viewport overlay (FB-03 spec §5 TAS-86 clarification)
     expect(sidebar).toHaveAttribute('data-visible', 'false');
     expect(toggle).toHaveFocus();
   });
+
+  it('closes the footer menu when the overlay closes, so reopening does not invert the Esc stack (TAS-94, TAS-92 N1)', async () => {
+    stubNarrowViewport();
+    const me = makeMeResponse();
+    mockFetchSequence(jsonResponse(200, me), boardsPage());
+
+    renderApp('/');
+    const toggle = await screen.findByRole('button', { name: messages.shell.toggleSidebar });
+    fireEvent.click(toggle);
+
+    const sidebar = screen.getByRole('navigation', { name: messages.app.name });
+    const userMenuButton = await screen.findByRole('button', { name: messages.shell.userMenu });
+
+    fireEvent.click(userMenuButton);
+    expect(await screen.findByRole('menu', { name: messages.shell.userMenu })).toBeInTheDocument();
+
+    // Dismiss the overlay (toggle, not Esc) while the footer menu is still
+    // open: the reviewer's repro. Without the fix, the menu's Esc-stack
+    // token stays registered even though the menu itself is gone.
+    fireEvent.click(toggle);
+    expect(sidebar).toHaveAttribute('data-visible', 'false');
+    expect(screen.queryByRole('menu', { name: messages.shell.userMenu })).not.toBeInTheDocument();
+    expect(userMenuButton).not.toHaveAttribute('aria-expanded', 'true');
+
+    // Reopen the overlay: the menu must stay closed (it was never visible to
+    // the user during the gap), and the overlay's own Esc token must be the
+    // topmost layer again.
+    fireEvent.click(toggle);
+    expect(sidebar).toHaveAttribute('data-visible', 'true');
+    expect(screen.queryByRole('menu', { name: messages.shell.userMenu })).not.toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(sidebar).toHaveAttribute('data-visible', 'false');
+    expect(toggle).toHaveFocus();
+  });
 });
 
 describe('AppShell initial focus (FS §10 tab order, TAS-73)', () => {
