@@ -307,7 +307,11 @@ describe('the index serves the feed (FB-06 §7)', () => {
     `;
 
     await handle.sql`analyze activity_event`;
-  });
+    // 21,000 inserts plus `analyze` run in about two seconds on an idle
+    // machine, but this is the one fixture in the suite whose cost is not
+    // bounded by a handful of HTTP requests, so it gets its own budget rather
+    // than tripping the 30-second default on a loaded CI runner.
+  }, 180_000);
 
   it('reads the first page of a 1,000-event card through the index', async () => {
     // The same shape `listCardActivity` builds: the page is cut before the
