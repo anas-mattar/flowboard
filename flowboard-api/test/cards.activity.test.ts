@@ -187,6 +187,36 @@ describe('pagination and the cursor (AC 8, CL-E38)', () => {
     expect(new Set(seen).size).toBe(12);
   });
 
+  it('does not skip events written in the same millisecond but a later microsecond', async () => {
+    // PostgreSQL stores `timestamptz` to the microsecond; a JavaScript `Date`
+    // holds milliseconds. A cursor built from the truncated value sits *before*
+    // the row it points at, and the next page's `<` predicate then drops every
+    // event between the two. These six share a millisecond and differ only in
+    // microseconds, which is what a burst of writes under load looks like.
+    await handle.sql`
+      insert into activity_event (id, card_id, actor_id, type, payload, created_at)
+      select gen_random_uuid(), ${cardId}, ${owner.userId}, 'card.renamed',
+             jsonb_build_object('from', 'a', 'to', 'b'),
+             timestamptz '2026-10-09 12:00:00.123000+00' + (generations.n || ' microseconds')::interval
+      from generate_series(1, 6) as generations(n)
+    `;
+
+    const seen: string[] = [];
+    let cursor: string | null = null;
+
+    do {
+      const query: string = `?limit=2${cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`}`;
+      const page: Page = (await activity({ query })).json<Page>();
+
+      seen.push(...page.items.map((item) => item.id));
+      cursor = page.nextCursor;
+    } while (cursor !== null);
+
+    // Six synthetic events plus the fixture's `card.created`.
+    expect(seen).toHaveLength(7);
+    expect(new Set(seen).size).toBe(7);
+  });
+
   it('returns a null cursor on the last page', async () => {
     await renameTimes(4);
 

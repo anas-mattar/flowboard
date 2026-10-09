@@ -646,7 +646,21 @@ export async function listCardActivity(
   // newest 50, which is work proportional to the card's whole history on every
   // page; this subquery walks the index in order and stops at `limit + 1`.
   const pageQuery = db
-    .select()
+    .select({
+      id: activityEventTable.id,
+      cardId: activityEventTable.cardId,
+      actorId: activityEventTable.actorId,
+      type: activityEventTable.type,
+      payload: activityEventTable.payload,
+      createdAt: activityEventTable.createdAt,
+      // The cursor is built from this, not from `createdAt`. PostgreSQL stores
+      // `timestamptz` to the microsecond and `now()` resolves to it, but the
+      // driver hands JavaScript a `Date`, which only holds milliseconds. A
+      // cursor built from the truncated value would sit *before* the row it
+      // points at, and the next page's `<` predicate would silently skip every
+      // event written in the same millisecond but a later microsecond.
+      createdAtCursor: sql<string>`to_char(${activityEventTable.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+    })
     .from(activityEventTable)
     .where(and(eq(activityEventTable.cardId, cardId), keyset))
     .orderBy(desc(activityEventTable.createdAt), desc(activityEventTable.id))
@@ -660,6 +674,7 @@ export async function listCardActivity(
       type: pageQuery.type,
       payload: pageQuery.payload,
       createdAt: pageQuery.createdAt,
+      createdAtCursor: pageQuery.createdAtCursor,
       actorId: userTable.id,
       displayName: userTable.displayName,
       initials: userTable.initials,
@@ -689,7 +704,7 @@ export async function listCardActivity(
     })),
     nextCursor:
       hasMore && last !== undefined
-        ? encodeActivityCursor({ createdAt: last.createdAt.toISOString(), id: last.id })
+        ? encodeActivityCursor({ createdAt: last.createdAtCursor, id: last.id })
         : null,
   };
 }
