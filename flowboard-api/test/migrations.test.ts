@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabase, type DatabaseHandle } from '../src/db/client.js';
-import { appliedMigrations, migrateDown, migrateUp } from '../src/db/migrate.js';
+import { appliedMigrations, migrateDown, migrateUp, migrationFiles } from '../src/db/migrate.js';
 import { testConnectionString } from './helpers/database.js';
 
 /**
@@ -51,6 +51,12 @@ const EXPECTED_INDEXES = [
 ] as const;
 
 let handle: DatabaseHandle;
+/**
+ * Every migration in the folder, in application order. The suite asserts
+ * against this rather than a hardcoded count so adding a migration (FB-06
+ * added `0001_activity_event_id_in_feed_index`) does not break it.
+ */
+let expectedMigrations: string[];
 
 async function publicTables(): Promise<string[]> {
   const rows = await handle.sql<{ name: string }[]>`
@@ -71,8 +77,9 @@ async function publicIndexes(): Promise<string[]> {
   return rows.map((row) => row.name);
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   handle = createDatabase(testConnectionString(), 2);
+  expectedMigrations = await migrationFiles();
 });
 
 afterAll(async () => {
@@ -81,18 +88,23 @@ afterAll(async () => {
   await handle.close();
 });
 
-describe('0000_init up, down, up (FB-01 §4.1, STANDARDS §1.3)', () => {
+describe('migrations up, down, up (FB-01 §4.1, STANDARDS §1.3)', () => {
+  it('starts from 0000_init', () => {
+    expect(expectedMigrations[0]).toBe('0000_init.sql');
+  });
+
   it('applies every table', async () => {
     await migrateUp(handle);
 
     expect(await publicTables()).toStrictEqual([...EXPECTED_TABLES]);
-    expect(await appliedMigrations(handle)).toHaveLength(1);
+    expect(await appliedMigrations(handle)).toHaveLength(expectedMigrations.length);
   });
 
   it('rolls back to an empty public schema', async () => {
     const rolledBack = await migrateDown(handle, { all: true });
 
-    expect(rolledBack).toStrictEqual(['0000_init.sql']);
+    // Newest first, so the reverse of the application order.
+    expect(rolledBack).toStrictEqual([...expectedMigrations].reverse());
     expect(await publicTables()).toStrictEqual([]);
     expect(await appliedMigrations(handle)).toStrictEqual([]);
   });
@@ -101,7 +113,7 @@ describe('0000_init up, down, up (FB-01 §4.1, STANDARDS §1.3)', () => {
     await migrateUp(handle);
 
     expect(await publicTables()).toStrictEqual([...EXPECTED_TABLES]);
-    expect(await appliedMigrations(handle)).toHaveLength(1);
+    expect(await appliedMigrations(handle)).toHaveLength(expectedMigrations.length);
   });
 
   it('creates all 17 tables (FB-01 §3)', () => {

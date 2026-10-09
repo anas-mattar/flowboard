@@ -659,9 +659,10 @@ export async function listCardActivity(
       // cursor built from the truncated value would sit *before* the row it
       // points at, and the next page's `<` predicate would silently skip every
       // event written in the same millisecond but a later microsecond.
-      createdAtCursor: sql<string>`to_char(${activityEventTable.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`.as(
-        'created_at_cursor',
-      ),
+      createdAtCursor:
+        sql<string>`to_char(${activityEventTable.createdAt} at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`.as(
+          'created_at_cursor',
+        ),
     })
     .from(activityEventTable)
     .where(and(eq(activityEventTable.cardId, cardId), keyset))

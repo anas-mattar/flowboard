@@ -26,8 +26,12 @@ describe('flowboard_test database', () => {
     expect(rows[0]?.one).toBe(1);
   });
 
-  it('is the test database, not the development database (CL-E21)', async () => {
+  it('is a test database, not the development database (CL-E21)', async () => {
     const rows = await handle.db.execute<{ name: string }>(sql`select current_database() as name`);
-    expect(rows[0]?.name).toBe('flowboard_test');
+
+    // `flowboard_test` in CI, plus the per-agent throwaway databases the
+    // TAS-108 isolation convention creates (`flowboard_test_tas161` and the
+    // like). What CL-E21 guards against is running against `flowboard`.
+    expect(rows[0]?.name).toMatch(/^flowboard_test(_[a-z0-9_]+)?$/);
   });
 });
