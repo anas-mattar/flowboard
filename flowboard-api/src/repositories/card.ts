@@ -9,7 +9,7 @@ import {
   type CardRenamedPayload,
   type FunnelEventType,
 } from '@flowboard/shared';
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Database, DbExecutor } from '../db/client.js';
 import { newId } from '../db/id.js';
 import {
@@ -40,6 +40,7 @@ import {
   appendActivityEvents,
   type NewActivityEvent,
 } from './activity-event.js';
+import { planInlineRebalance } from '../positions/rebalance-inline.js';
 import type { BoardAccess, HydratedCard } from './board.js';
 
 /**
@@ -336,6 +337,75 @@ export type UpdateCardResult =
   | { readonly outcome: 'rejected'; readonly reason: MoveRejection };
 
 /**
+ * Takes the container lock of CL-E36: the `list` rows are held `FOR UPDATE` for
+ * the rest of the transaction, so two moves into the same list cannot both read
+ * the pre-re-balance positions and write conflicting rewrites.
+ *
+ * The ids are locked in ascending order and the lock is taken **before** the
+ * card row is written (CL-E49). FB-07 §6 describes the re-balance as happening
+ * after the write, which it still does; acquiring the lock first only removes
+ * the lock-ordering cycle between a mover (card row, then its list) and a
+ * concurrent re-balance of that list (the list, then its card rows).
+ */
+async function lockLists(tx: DbExecutor, listIds: readonly string[]): Promise<void> {
+  const ordered = [...new Set(listIds)].sort();
+
+  if (ordered.length === 0) return;
+
+  await tx
+    .select({ id: listTable.id })
+    .from(listTable)
+    .where(inArray(listTable.id, ordered))
+    .orderBy(asc(listTable.id))
+    .for('update');
+}
+
+/**
+ * The inline re-balance of CL-E36 for one list's live cards.
+ *
+ * Every card of the list is rewritten at `rebalance(count)` in current
+ * `(position, id)` order with a fresh `updatedAt`, and **no** activity event:
+ * their rank did not change, only the numbers carrying it (FB-07 AC 8). The
+ * bumped `updatedAt` is deliberate — a client holding a stale `If-Match` on a
+ * neighbour must re-fetch.
+ *
+ * Returns the moved card's rewritten row when the re-balance touched it, so the
+ * response carries its final position, or `null` when no gap was too small.
+ *
+ * The caller must already hold the list lock (`lockLists`).
+ */
+async function rebalanceListCards(
+  tx: DbExecutor,
+  listId: string,
+  movedCardId: string,
+): Promise<CardRow | null> {
+  const cards = await tx
+    .select({ id: cardTable.id, position: cardTable.position })
+    .from(cardTable)
+    .where(and(eq(cardTable.listId, listId), isNull(cardTable.archivedAt)))
+    .orderBy(asc(cardTable.position), asc(cardTable.id));
+
+  const plan = planInlineRebalance(cards);
+
+  if (plan === null) return null;
+
+  const rewrittenAt = new Date();
+  let movedCard: CardRow | null = null;
+
+  for (const item of plan) {
+    const rows = await tx
+      .update(cardTable)
+      .set({ position: item.position, updatedAt: rewrittenAt })
+      .where(eq(cardTable.id, item.id))
+      .returning();
+
+    if (item.id === movedCardId) movedCard = rows[0] ?? null;
+  }
+
+  return movedCard;
+}
+
+/**
  * Applies a `PATCH` and writes one activity event per field that actually
  * changed (AC 3 to 5, CL-E23, CL-E35, CL-E41), in one transaction.
  *
@@ -359,6 +429,8 @@ export async function updateCard(
     const current = access.card;
     const values: Record<string, unknown> = {};
     const events: NewActivityEvent[] = [];
+    /** The destination list to re-balance after the write (CL-E36), if any. */
+    let rebalanceListId: string | null = null;
 
     if (update.title !== undefined && update.title !== current.title) {
       values['title'] = update.title;
@@ -413,6 +485,12 @@ export async function updateCard(
       const moved = toListId !== current.listId || update.position !== current.position;
 
       if (moved) {
+        // CL-E36/CL-E49: hold the destination list (and the source list on a
+        // cross-list move, so the two are always taken in the same order)
+        // before the card row is written.
+        await lockLists(tx, [toListId, current.listId]);
+
+        rebalanceListId = toListId;
         values['listId'] = toListId;
         // CL-E41: the position is stored as sent. The client computed it from
         // the neighbours it can see with the shared position module, and
@@ -453,6 +531,16 @@ export async function updateCard(
     }
 
     await appendActivityEvents(tx, events);
+
+    // CL-E36: the position has been written; if the destination list now has a
+    // gap too small to split, rewrite the whole list in the same transaction.
+    // The response carries the moved card's final position (FB-07 §6), which
+    // the client compares against the one it sent (FB-07 AC 9).
+    if (rebalanceListId !== null) {
+      const rebalanced = await rebalanceListCards(tx, rebalanceListId, card.id);
+
+      if (rebalanced !== null) return { outcome: 'updated', card: rebalanced } as const;
+    }
 
     return { outcome: 'updated', card } as const;
   });
