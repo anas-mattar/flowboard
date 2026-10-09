@@ -32,7 +32,20 @@ export const activityEventTable = pgTable(
     createdAt: createdAtColumn(),
   },
   (table) => [
-    index('activity_event_card_created_idx').on(table.cardId, table.createdAt.desc()),
+    // FB-06 §7: the feed is ordered `(created_at desc, id desc)` and paginated
+    // on that whole tuple (CL-E38), so `id` is part of the index. Without it a
+    // card with 1,000 events sorts its entire history to return one page of 50.
+    //
+    // `nullsFirst()` is not cosmetic: plain `ORDER BY x DESC` means `DESC NULLS
+    // FIRST` in SQL, and an index declared `DESC NULLS LAST` does not satisfy
+    // it — PostgreSQL falls back to a bitmap scan plus a top-N sort over the
+    // card's whole history. Both columns are `not null`, so the two spellings
+    // are semantically identical and only the planner can tell them apart.
+    index('activity_event_card_created_idx').on(
+      table.cardId,
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
+    ),
     check('activity_event_type_check', inList(table.type, ACTIVITY_EVENT_TYPES)),
   ],
 );

@@ -1,0 +1,2 @@
+DROP INDEX "activity_event_card_created_idx";--> statement-breakpoint
+CREATE INDEX "activity_event_card_created_idx" ON "activity_event" USING btree ("card_id","created_at" DESC NULLS FIRST,"id" DESC NULLS FIRST);
