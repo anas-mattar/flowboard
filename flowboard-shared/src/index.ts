@@ -153,17 +153,45 @@ export {
 } from './schemas/list.js';
 
 export {
+  activityPageSchema,
+  activityQuerySchema,
   cardArchivedPayloadSchema,
   cardArchivedViaSchema,
+  cardCreatedPayloadSchema,
+  cardDescribedPayloadSchema,
   cardMovedPayloadSchema,
   cardMovedViaSchema,
+  cardRenamedPayloadSchema,
+  ACTIVITY_PAGE_DEFAULT_LIMIT,
+  ACTIVITY_PAGE_MAX_LIMIT,
   CARD_ARCHIVED_VIA,
   CARD_MOVED_VIA,
+  type ActivityPage,
+  type ActivityQuery,
   type CardArchivedPayload,
   type CardArchivedVia,
+  type CardCreatedPayload,
+  type CardDescribedPayload,
   type CardMovedPayload,
   type CardMovedVia,
+  type CardRenamedPayload,
 } from './schemas/activity.js';
+
+export {
+  cardCreateSchema,
+  cardDescriptionFieldSchema,
+  cardDetailSchema,
+  cardIdParamsSchema,
+  cardPatchSchema,
+  cardPositionFieldSchema,
+  cardTitleFieldSchema,
+  CARD_DESCRIPTION_MAX_LENGTH,
+  CARD_TITLE_MAX_LENGTH,
+  type CardCreate,
+  type CardDetail,
+  type CardIdParams,
+  type CardPatch,
+} from './schemas/card.js';
 
 export {
   meResponseSchema,
