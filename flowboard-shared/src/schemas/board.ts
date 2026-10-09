@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { boardRoleSchema } from './roles.js';
 import { boardSchema } from './entities/board.js';
-import { cardSchema } from './entities/card.js';
+import { cardSummarySchema } from './card.js';
 import { hexColorSchema, uuidSchema } from './entities/common.js';
 import { labelSchema } from './entities/label.js';
 import { listSchema } from './entities/list.js';
@@ -124,34 +124,13 @@ export const boardMemberViewSchema = z
 export type BoardMemberView = z.infer<typeof boardMemberViewSchema>;
 
 /**
- * A card as the board canvas needs it (FB-04 §6). Description, checklist
- * items, comments and activity are fetched when the card modal opens
- * (ARCHITECTURE §2.3), so hydration carries only the counts the front of the
- * card shows: `hasDescription`, `checklist` and `commentCount`.
+ * A card as the board canvas needs it. The schema itself lives in `card.ts`
+ * since FB-06 §6 gave cards their own module; it is re-exported here so the
+ * FB-04 imports (`@flowboard/shared` and this file alike) keep working and its
+ * field set stays exactly what hydration promised.
  */
-export const cardSummarySchema = cardSchema
-  .pick({
-    id: true,
-    listId: true,
-    title: true,
-    position: true,
-    dueAt: true,
-    dueComplete: true,
-    updatedAt: true,
-  })
-  .extend({
-    labelIds: z.array(uuidSchema),
-    memberIds: z.array(uuidSchema),
-    checklist: z.object({
-      done: z.number().int().nonnegative(),
-      total: z.number().int().nonnegative(),
-    }),
-    commentCount: z.number().int().nonnegative(),
-    hasDescription: z.boolean(),
-  })
-  .describe('CardSummary');
-
-export type CardSummary = z.infer<typeof cardSummarySchema>;
+export { cardSummarySchema };
+export type { CardSummary } from './card.js';
 
 /** A non-archived list with its non-archived cards in position order (AC 4). */
 export const listWithCardsSchema = listSchema

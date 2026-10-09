@@ -30,6 +30,8 @@ let token: string;
 let boardId: string;
 /** A list on that board, for the FB-05 list `{id}` routes. */
 let listId: string;
+/** A card on that list, for the FB-06 card `{id}` routes. */
+let cardId: string;
 
 const account = {
   email: 'matrix@example.test',
@@ -41,7 +43,7 @@ interface RouteCase {
   readonly method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   readonly url: string;
   /** Which fixture id `{id}` stands for in this row. Defaults to the board. */
-  readonly idFixture?: 'board' | 'list';
+  readonly idFixture?: 'board' | 'list' | 'card';
   /** Status for a caller with a valid session. */
   readonly authenticated: number;
   /** Status for a caller with no credentials. */
@@ -134,6 +136,46 @@ const ROUTES: readonly RouteCase[] = [
     authenticated: 200,
     anonymous: 401,
   },
+  // FB-06. `{id}` resolves to the fixture card on the matrix list, except for
+  // the create route, which is addressed by its parent list.
+  {
+    method: 'POST',
+    url: '/v1/lists/{id}/cards',
+    idFixture: 'list',
+    authenticated: 201,
+    anonymous: 401,
+    payload: { title: 'Matrix card' },
+  },
+  { method: 'GET', url: '/v1/cards/{id}', idFixture: 'card', authenticated: 200, anonymous: 401 },
+  {
+    method: 'PATCH',
+    url: '/v1/cards/{id}',
+    idFixture: 'card',
+    authenticated: 200,
+    anonymous: 401,
+    payload: { title: 'Matrix card renamed' },
+  },
+  {
+    method: 'DELETE',
+    url: '/v1/cards/{id}',
+    idFixture: 'card',
+    authenticated: 204,
+    anonymous: 401,
+  },
+  {
+    method: 'POST',
+    url: '/v1/cards/{id}/copy',
+    idFixture: 'card',
+    authenticated: 201,
+    anonymous: 401,
+  },
+  {
+    method: 'GET',
+    url: '/v1/cards/{id}/activity',
+    idFixture: 'card',
+    authenticated: 200,
+    anonymous: 401,
+  },
 ];
 
 beforeAll(async () => {
@@ -178,7 +220,22 @@ beforeEach(async () => {
     ...withSessionCookie(cookie),
   });
   listId = list.json<{ id: string }>().id;
+
+  const card = await app.inject({
+    method: 'POST',
+    url: `/v1/lists/${listId}/cards`,
+    payload: { title: 'Matrix fixture card' },
+    ...withSessionCookie(cookie),
+  });
+  cardId = card.json<{ id: string }>().id;
 });
+
+/** The fixture id `{id}` stands for in a given row. */
+function fixtureId(route: RouteCase): string {
+  if (route.idFixture === 'list') return listId;
+  if (route.idFixture === 'card') return cardId;
+  return boardId;
+}
 
 function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'headers'> = {}) {
   const payload = route.url === '/v1/auth/signup' ? signupBody() : (route.payload ?? undefined);
@@ -187,7 +244,7 @@ function request(route: RouteCase, auth: Pick<InjectOptions, 'cookies' | 'header
     method: route.method,
     // The table carries the OpenAPI path so the completeness check can compare
     // it directly; the request needs a real id.
-    url: route.url.replace('{id}', route.idFixture === 'list' ? listId : boardId),
+    url: route.url.replace('{id}', fixtureId(route)),
     ...(payload === undefined ? {} : { payload }),
     ...auth,
   });
