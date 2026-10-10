@@ -205,7 +205,7 @@ export function listRoutes(dependencies: RouteDependencies): FastifyPluginAsyncZ
 
         const { name, position, wipLimit } = request.body;
 
-        const list = await updateList(db, resolved.access.list.id, { name, position, wipLimit });
+        const list = await updateList(db, resolved.access.list, { name, position, wipLimit });
 
         if (list === null) return reply.code(404).send(listNotFound());
 

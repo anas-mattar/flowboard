@@ -17,6 +17,7 @@ import {
   workspaceMemberTable,
   type ListRow,
 } from '../db/schema/index.js';
+import { planInlineRebalance } from '../positions/rebalance-inline.js';
 import { appendActivityEvents } from './activity-event.js';
 import type { BoardAccess } from './board.js';
 
@@ -151,28 +152,104 @@ export interface ListUpdate {
 }
 
 /**
+ * The inline re-balance of CL-E36 for one board's live lists — the list-row
+ * counterpart of `rebalanceListCards` in the card repository.
+ *
+ * Every list of the board is rewritten at `rebalance(count)` in current
+ * `(position, id)` order with a fresh `updatedAt` (FB-07 AC 8). Lists have no
+ * activity log, so the "no event for re-balanced neighbours" half of CL-E36 is
+ * structural here.
+ *
+ * Returns the moved list's rewritten row when the re-balance touched it, or
+ * `null` when no gap was too small. The caller must already hold the board
+ * lock.
+ */
+async function rebalanceBoardLists(
+  tx: DbExecutor,
+  boardId: string,
+  movedListId: string,
+): Promise<ListRow | null> {
+  const lists = await tx
+    .select({ id: listTable.id, position: listTable.position })
+    .from(listTable)
+    .where(and(eq(listTable.boardId, boardId), isNull(listTable.archivedAt)))
+    .orderBy(asc(listTable.position), asc(listTable.id));
+
+  const plan = planInlineRebalance(lists);
+
+  if (plan === null) return null;
+
+  const rewrittenAt = new Date();
+  let movedList: ListRow | null = null;
+
+  for (const item of plan) {
+    const rows = await tx
+      .update(listTable)
+      .set({ position: item.position, updatedAt: rewrittenAt })
+      .where(eq(listTable.id, item.id))
+      .returning();
+
+    if (item.id === movedListId) movedList = rows[0] ?? null;
+  }
+
+  return movedList;
+}
+
+/**
  * Applies the patch and moves `updatedAt` (FS §7.1). A `position`-only patch is
  * a list edit and bumps `updatedAt` too (FB-05 §6), so the next `If-Match`
  * reflects the reorder.
+ *
+ * A patch that writes a `position` also runs the inline re-balance of CL-E36
+ * over the board's lists, in the same transaction, holding the board row
+ * `FOR UPDATE` so two concurrent reorders cannot both rewrite the row. The
+ * returned list carries its final position (FB-07 §6, AC 8).
  *
  * Returns `null` only if the row disappeared between the access check and the
  * write.
  */
 export async function updateList(
-  db: DbExecutor,
-  listId: string,
+  db: Database,
+  list: ListRow,
   update: ListUpdate,
 ): Promise<ListRow | null> {
-  const values: Record<string, unknown> = { updatedAt: new Date() };
+  return db.transaction(async (tx) => {
+    const values: Record<string, unknown> = { updatedAt: new Date() };
 
-  if (update.name !== undefined) values['name'] = update.name;
-  if (update.position !== undefined) values['position'] = update.position;
-  // `null` is a meaningful value here, so the guard is `!== undefined`.
-  if (update.wipLimit !== undefined) values['wipLimit'] = update.wipLimit;
+    if (update.name !== undefined) values['name'] = update.name;
+    if (update.position !== undefined) values['position'] = update.position;
+    // `null` is a meaningful value here, so the guard is `!== undefined`.
+    if (update.wipLimit !== undefined) values['wipLimit'] = update.wipLimit;
 
-  const rows = await db.update(listTable).set(values).where(eq(listTable.id, listId)).returning();
+    // CL-E36/CL-E49: the container of a list is its board. Lock it before the
+    // write so a concurrent reorder of the same board serialises here rather
+    // than racing the re-balance read below.
+    if (update.position !== undefined) {
+      await tx
+        .select({ id: boardTable.id })
+        .from(boardTable)
+        .where(eq(boardTable.id, list.boardId))
+        .for('update');
+    }
 
-  return rows[0] ?? null;
+    const rows = await tx
+      .update(listTable)
+      .set(values)
+      .where(eq(listTable.id, list.id))
+      .returning();
+
+    const updated = rows[0];
+
+    if (updated === undefined) return null;
+
+    if (update.position !== undefined) {
+      const rebalanced = await rebalanceBoardLists(tx, list.boardId, list.id);
+
+      if (rebalanced !== null) return rebalanced;
+    }
+
+    return updated;
+  });
 }
 
 /** The live cards of one list, in rank order `(position, id)`. */
